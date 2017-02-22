@@ -1,0 +1,3 @@
+include example_data/*.md
+include example_data/*.fits
+
