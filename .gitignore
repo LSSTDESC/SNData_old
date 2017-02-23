@@ -87,3 +87,5 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+sndata/example_data/DES*

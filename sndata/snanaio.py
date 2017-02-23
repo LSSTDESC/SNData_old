@@ -3,11 +3,12 @@ import fitsio
 import pandas as pd
 import numpy as np
 import os
+import gzip
 from .lightcurve import LightCurve
 from astropy.table import Table, Column
+from collections import defaultdict
 
-
-__all__ = ['SNANASims']
+__all__ = ['SNANASims','SNChalSims']
 
 lsst_bandNames = 'ugrizY'
 lsst_bandpassNames = tuple('lsst' + band
@@ -21,23 +22,23 @@ class SNANASims(object):
                  SNANABandNames=lsst_bandNames,
                  registeredBandNames=lsst_bandpassNames):
         """
-	Parameters
-	---------
-	headFile : string, mandatory
-	    absolute path to head file of simulation
-	photFile : string, mandatory
-	    absolute path to phot file of simulation
-	coerce_inds2int : Bool, optional, defaults to True
-	    if true, converts SNID from string to int
+    Parameters
+    ---------
+    headFile : string, mandatory
+        absolute path to head file of simulation
+    photFile : string, mandatory
+        absolute path to phot file of simulation
+    coerce_inds2int : Bool, optional, defaults to True
+        if true, converts SNID from string to int
         SNANABandNames : iterable of strings/characters, optional, defaults to LSST
             characters used to denote the bandpass in the SNANA simulations
         registeredBandNames : iterable of strings, optional, defaults to LSST
             names of the bands registered in SNCosmo
-	"""
+    """
         self.headFile = headFile
         self.photFile = photFile
         self.headData = self.get_headData(self.headFile,
-					  coerce_inds2int=coerce_inds2int)
+                      coerce_inds2int=coerce_inds2int)
         self.phot = fitsio.FITS(photFile)
         self.bandNames = SNANABandNames
         self.newbandNames = registeredBandNames
@@ -73,7 +74,7 @@ class SNANASims(object):
         return cls(headFile=headfile, photFile=photfile,
                    coerce_inds2int=coerce_inds2int, SNANABandNames=SNANABandNames,
                    registeredBandNames=registeredBandNames)
-    
+
     @staticmethod
     def snanadatafile(snanafileroot, filetype='head', location='./'):
         '''
@@ -113,14 +114,14 @@ class SNANASims(object):
     @staticmethod 
     def get_headData(headFile, coerce_inds2int=False):
         """
-	read the headData of a SNANA simulation and return a dataframe
-	representing the simulation
+    read the headData of a SNANA simulation and return a dataframe
+    representing the simulation
         
         Parameters
-	----------
-	headFile :
-	coerce_inds2int :
-	"""
+    ----------
+    headFile :
+    coerce_inds2int :
+    """
         _head = Table.read(headFile)
         if _head['SNID'].dtype.type is np.string_:
             data = _head['SNID'].data
@@ -138,14 +139,14 @@ class SNANASims(object):
         
     def get_photrows(self, row=None, snid=None):
         """
-	return rows of the photometry table corresponding to a SN as listed
-	in the head table.
+    return rows of the photometry table corresponding to a SN as listed
+    in the head table.
 
-	Parameters
-	----------
-	row :
-	snid :
-	"""
+    Parameters
+    ----------
+    row :
+    snid :
+    """
         if row is not None:
             ptrs = self.headData.iloc[row][['PTROBS_MIN', 'PTROBS_MAX']]
         elif snid is not None:
@@ -159,15 +160,15 @@ class SNANASims(object):
 
     def get_SNANA_photometry(self, snid=None, ptrs=None):
         """
-	return the photometry table corresponding to a SN with snid (from the
-       	head table) or the photometry table within the range of row numbers
-	indicated by ptrs
+    return the photometry table corresponding to a SN with snid (from the
+           head table) or the photometry table within the range of row numbers
+    indicated by ptrs
 
         Parameters
         ----------
         snid : 
         ptrs :
-	"""
+    """
         if ptrs is not None:
             assert np.shape(ptrs) == (2,)
         elif snid is not None:
@@ -181,3 +182,157 @@ class SNANASims(object):
         lcdf['zp'] = 27.5
  
         return LightCurve(lcdf, bandNameDict=self.bandNameDict, ignore_case=True)
+
+class SNChalSims(SNANASims):
+    def __init__(self, headData, phot, coerce_inds2int=True,
+                 SNANABandNames=lsst_bandNames,
+                 registeredBandNames=lsst_bandpassNames):
+        """
+    Parameters
+    ---------
+    headFile : string, mandatory
+        absolute path to head file of simulation
+    photFile : string, mandatory
+        absolute path to phot file of simulation
+    coerce_inds2int : Bool, optional, defaults to True
+        if true, converts SNID from string to int
+        SNANABandNames : iterable of strings/characters, optional, defaults to LSST
+            characters used to denote the bandpass in the SNANA simulations
+        registeredBandNames : iterable of strings, optional, defaults to LSST
+            names of the bands registered in SNCosmo
+    """
+        self.headFile = None
+        self.photFile = None
+        self.headData = headData
+        self.phot = phot
+        self.bandNames = SNANABandNames
+        self.newbandNames = registeredBandNames
+        self.bandNameDict = dict(zip(self.bandNames, self.newbandNames)) 
+
+    @classmethod
+    def fromSNChal(cls,snanafileroot, location='./', zipped=True,
+                   coerce_inds2int=False, 
+                   SNANABandNames=lsst_bandNames,
+                   registeredBandNames=lsst_bandpassNames):
+
+        location = os.path.abspath(location)
+        filename = os.path.join(location, snanafileroot)
+
+        dictparams=defaultdict(list)
+        all_lightcurves = []
+        cls._not_available_names={'pixsize': -9.0,'ptrobs_min': -9,'ptrobs_max':-9,'nxpix': 0,'nypix': -9,'mwebv_err': -9, 'redshift_helio': -9,
+                'redshift_helio_err': -9,'hostgal_snsep': -9.0,'hostgal_logmass': -9.0,'hostgal_logmass_err': -9.0,
+                'hostgal_mag_g': -9.0,'hostgal_mag_r': -9.0,'hostgal_mag_i': -9.0,'hostgal_mag_z': -9.0,
+                'hostgal_sb_fluxcal_g': -9.0,'hostgal_sb_fluxcal_r': -9.0,'hostgal_sb_fluxcal_i': -9.0,'hostgal_sb_fluxcal_z': -9.0,
+                'peakmjd': -9.0,'search_type': -9}
+
+        if zipped:
+            operator = gzip.open
+            lcoperator = gzip.GzipFile
+        else:
+            operator = open
+            lcoperator = str
+
+        with operator(filename, 'rb') as f:
+            current_lc = list()
+            current_head = list()
+            for line in f:
+
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+
+                if line.startswith('END:'):
+                    snid = cls._process_header(current_head, dictparams)
+                    cls._process_lc(snid,current_lc, all_lightcurves)
+                    current_lc = list()
+                    current_head = list()
+
+                elif line.startswith('OBS:'):
+                    current_lc.append(line[4:])
+                
+                else:
+                    current_head.append(line)
+
+        params = pd.DataFrame.from_dict(dictparams).set_index('snid')
+
+        lightcurve = pd.DataFrame.from_records(np.array(all_lightcurves, dtype=np.dtype([('snid', np.int), ('mjd', np.float), ('band', '|S16'), ('flux', np.float), ('fluxerr', np.float), ('zp', np.float), ('zpsys','|S8')])))
+
+        return cls(headData=params, phot=lightcurve,
+                   coerce_inds2int=coerce_inds2int, SNANABandNames=SNANABandNames,
+                   registeredBandNames=registeredBandNames)
+
+    @classmethod
+    def _process_header(cls, header_lines, dictparams):
+        for line in header_lines:
+            k, _, v = line.partition(':')
+            if not _:
+                continue
+            k = k.strip()
+            v = v.strip()
+
+            if k == 'SNID':
+                dictparams['snid'].append(int(v))
+                snid = int(v)
+            elif k == 'IAUC':
+                dictparams['iauc'].append(v)
+            elif k == 'SNTYPE':
+                dictparams['sn_type'].append(int(v))
+            elif k == 'FILTERS':
+                filters = v
+            elif k == 'RA':
+                dictparams['ra'].append(float(v.split('deg')[0].strip()))
+            elif k == 'DECL':
+                dictparams['decl'].append(float(v.split('deg')[0].strip()))
+            elif k == 'FAKE':
+                dictparams['fake'].append(int(v.split('(')[0].strip()))
+            elif k == 'MWEBV':
+                dictparams['mwebv'].append(float(v.split('MW')[0].strip()))
+            elif k == 'REDSHIFT_SPEC':
+                dictparams['hostgal_specz'].append(float(v.split('+-')[0].strip()))   
+                dictparams['hostgal_specz_err'].append(float(v.split('+-')[1].strip()))
+            elif k == 'HOST_GALAXY_GALID':
+                dictparams['hostid'].append(int(v))
+            elif k == 'HOST_GALAXY_PHOTO-Z':
+                dictparams['redshift_final'].append(float(v.split('+-')[0].strip()))   
+                dictparams['hostgal_photoz'].append(float(v.split('+-')[0].strip()))   
+                dictparams['redshift_final_err'].append(float(v.split('+-')[1].strip()))   
+                dictparams['hostgal_photoz_err'].append(float(v.split('+-')[1].strip()))   
+            elif k == 'NOBS':
+                dictparams['nobs'].append(int(v))
+
+        for k,v in cls._not_available_names.iteritems():
+            dictparams[k].append(v)
+
+        return snid
+
+    @staticmethod
+    def _process_lc(snid, lc_lines, all_lightcurves):
+        for line in lc_lines:
+            items = line.strip().split()
+            del items[2]
+            items.insert(0, snid)
+            for k in (1,3,4): items[k]=float(items[k])
+            items.append(27.5)
+            items.append('ab')
+            all_lightcurves.append(tuple(items))
+
+    def get_SNANA_photometry(self, snid=None, ptrs=None):
+        """
+    return the photometry table corresponding to a SN with snid (from the
+           head table) or the photometry table within the range of row numbers
+    indicated by ptrs
+
+        Parameters
+        ----------
+        snid : 
+        ptrs :
+    """
+        if ptrs is not None:
+            return self.phot.loc[ptrs[0]:ptrs[1]]
+        elif snid is not None:
+            return self.phot.query('snid ==' + str(snid)).reset_index(drop=True)
+
+#            return LightCurve(lcdf, bandNameDict=self.bandNameDict, ignore_case=True)
+
+        
