@@ -13,7 +13,6 @@ from .aliases import *
 from .lightcurve import *
 from .photometry import *
 from .snanaio import *
-from .analyzelcFits import *
 
 here = __file__
 basedir = os.path.split(here)[0]
