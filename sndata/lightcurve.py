@@ -153,6 +153,15 @@ class LightCurve(BaseLightCurve):
 
 
     def missingColumns(self, lcdf):
+        """
+        return a set of columns in the light curve dataframe that are missing
+        from the mandatory set of columns
+
+        Parameters
+        ----------
+        lcdf : `pd.dataFrame`
+            a light curve represented as a pandas dataframe
+        """
 
         notFound = self.mandatoryColumns - set(lcdf.columns)
         return notFound
