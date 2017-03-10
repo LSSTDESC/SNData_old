@@ -1,0 +1,377 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>API Reference &#8212; SNData 0.0.5dev0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.5dev0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Overview" href="overview.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-sndata">
+<span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-sndata" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="sndata.aliasDictionary">
+<code class="descclassname">sndata.</code><code class="descname">aliasDictionary</code><span class="sig-paren">(</span><em>sequence</em>, <em>aliases</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/aliases.html#aliasDictionary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.aliasDictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a dictionary of
+aliases of the form {standard_string_names: list of possible aliases}
+this finds occurances of aliases (ignoring capitalization) in the sequence
+of strings called sequence and returns a dictionary
+Dict(alias: standard_string_name)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>sequence</strong> : a sequence of strings</p>
+<p><strong>aliases</strong> : Dictionary with list-valued values</p>
+<blockquote>
+<div><p>dictionary with keys = standard desired names, value = possible aliases
+It is assumed that a single alias only works for a single key</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Dictionary with keys in the sequence of strings that have been identified</p>
+<p>as a possible alias of standard_string_names with</p>
+<p class="last">value =standard_string_names</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">aliases</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mjd&#39;</span><span class="p">,</span><span class="s1">&#39;expmjd&#39;</span><span class="p">],</span> <span class="n">flux</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">],</span>                       <span class="n">fluxerr</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;flux_err&#39;</span><span class="p">,</span> <span class="s1">&#39;fluxerror&#39;</span><span class="p">],</span> <span class="n">zpsys</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;magsys&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">testSeq</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mJd&#39;</span><span class="p">,</span> <span class="s1">&#39;band&#39;</span><span class="p">,</span> <span class="s1">&#39;zp&#39;</span><span class="p">,</span> <span class="s1">&#39;Flux&#39;</span><span class="p">,</span> <span class="s1">&#39;fluxError&#39;</span><span class="p">,</span> <span class="s1">&#39;zpsys&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">aliasDictionary</span><span class="p">(</span><span class="n">testSeq</span><span class="p">,</span> <span class="n">aliases</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;Flux&#39;</span><span class="p">:</span> <span class="s1">&#39;flux&#39;</span><span class="p">,</span>                                               <span class="s1">&#39;fluxError&#39;</span><span class="p">:</span> <span class="s1">&#39;fluxerr&#39;</span><span class="p">,</span>                                              <span class="s1">&#39;mJd&#39;</span><span class="p">:</span> <span class="s1">&#39;time&#39;</span><span class="p">}</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sndata.mapSeq2Standard">
+<code class="descclassname">sndata.</code><code class="descname">mapSeq2Standard</code><span class="sig-paren">(</span><em>sequence</em>, <em>aliasDict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/aliases.html#mapSeq2Standard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.mapSeq2Standard" title="Permalink to this definition">¶</a></dt>
+<dd><p>given a sequence of strings return a list of the strings, replacing those
+strings in the input sequence which are keys in the dictionary by their
+dictionary values</p>
+<p>sequence : sequence of strings</p>
+<dl class="docutils">
+<dt>aliasDict <span class="classifier-delimiter">:</span> <span class="classifier">Dictionary</span></dt>
+<dd>Dictionary of aliases where the keys are strings in the sequence and
+the values are the standard names associated with those strings</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of strings</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">aliases</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mjd&#39;</span><span class="p">,</span><span class="s1">&#39;expmjd&#39;</span><span class="p">],</span> <span class="n">flux</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">],</span> <span class="n">fluxerr</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;flux_err&#39;</span><span class="p">,</span> <span class="s1">&#39;fluxerror&#39;</span><span class="p">])</span> 
+<span class="gp">&gt;&gt;&gt; </span><span class="n">testSeq</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mJd&#39;</span><span class="p">,</span> <span class="s1">&#39;band&#39;</span><span class="p">,</span> <span class="s1">&#39;zp&#39;</span><span class="p">,</span> <span class="s1">&#39;Flux&#39;</span><span class="p">,</span> <span class="s1">&#39;fluxError&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">aliasDict</span> <span class="o">=</span> <span class="n">aliasDictionary</span><span class="p">(</span><span class="n">testSeq</span><span class="p">,</span> <span class="n">aliases</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mapSeq2Standard</span><span class="p">(</span><span class="n">testSeq</span><span class="p">,</span> <span class="n">aliasDict</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;band&#39;</span><span class="p">,</span> <span class="s1">&#39;zp&#39;</span><span class="p">,</span> <span class="s1">&#39;flux&#39;</span><span class="p">,</span> <span class="s1">&#39;fluxerr&#39;</span><span class="p">]</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sndata.BaseLightCurve">
+<em class="property">class </em><code class="descclassname">sndata.</code><code class="descname">BaseLightCurve</code><a class="reference internal" href="_modules/sndata/lightcurve.html#BaseLightCurve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.BaseLightCurve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract Base Class for Light Curve Data showing methods that need to be
+implemented.</p>
+<p class="rubric">Attributes</p>
+<p class="rubric">Methods</p>
+<dl class="attribute">
+<dt id="sndata.BaseLightCurve.columnAliases">
+<code class="descname">columnAliases</code><a class="headerlink" href="#sndata.BaseLightCurve.columnAliases" title="Permalink to this definition">¶</a></dt>
+<dd><p>dictionary that maps standard names as keys to a possible set of
+aliases</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="sndata.BaseLightCurve.lightCurve">
+<code class="descname">lightCurve</code><a class="headerlink" href="#sndata.BaseLightCurve.lightCurve" title="Permalink to this definition">¶</a></dt>
+<dd><p><cite>pd.DataFrame</cite> holding the lightCurve information. There can be more
+columns, but the following columns are mandatory:
+[&#8216;mjd&#8217;, &#8216;band&#8217;, &#8216;flux&#8217;, &#8216;fluxerr&#8217;, &#8216;zp&#8217;, &#8216;zpsys&#8217;]</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="sndata.BaseLightCurve.mandatoryColumns">
+<code class="descname">mandatoryColumns</code><a class="headerlink" href="#sndata.BaseLightCurve.mandatoryColumns" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list of mandatory columns in the light curve dataFrame with
+possible aliases in <cite>self.mandatoryColumnAliases</cite>.</p>
+<p>mjd : time
+band : string
+flux : model flux</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sndata.LightCurve">
+<em class="property">class </em><code class="descclassname">sndata.</code><code class="descname">LightCurve</code><span class="sig-paren">(</span><em>lcdf</em>, <em>bandNameDict=None</em>, <em>ignore_case=True</em>, <em>propDict=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/lightcurve.html#LightCurve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.LightCurve" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Class to represent light curve data.  Light curve data is often available
+with different kinds of column names. This class homogenizes them to a set
+of standard names, and allows simple calculations to be based on the same
+variable names &#8216;mjd&#8217;, &#8216;band&#8217;, &#8216;flux&#8217;, &#8216;fluxerr&#8217;, &#8216;zp&#8217;, &#8216;zpsys&#8217; which denote
+the time of observation, bandpass of observation, the flux and flux
+uncertainty of the observation.</p>
+<p>zp represents the zero point to convert the flux value to the phsyical flux
+using the zero point system zpsys.</p>
+<p class="rubric">Attributes</p>
+<p class="rubric">Methods</p>
+<dl class="method">
+<dt id="sndata.LightCurve.coaddedLC">
+<code class="descname">coaddedLC</code><span class="sig-paren">(</span><em>coaddTimes=None</em>, <em>mjdBefore=None</em>, <em>minmjd=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/lightcurve.html#LightCurve.coaddedLC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.LightCurve.coaddedLC" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a coadded light curve</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="sndata.LightCurve.lightCurve">
+<code class="descname">lightCurve</code><a class="headerlink" href="#sndata.LightCurve.lightCurve" title="Permalink to this definition">¶</a></dt>
+<dd><p>The lightcurve in native format</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sndata.LightCurve.missingColumns">
+<code class="descname">missingColumns</code><span class="sig-paren">(</span><em>lcdf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/lightcurve.html#LightCurve.missingColumns"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.LightCurve.missingColumns" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a set of columns in the light curve dataframe that are missing
+from the mandatory set of columns</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>lcdf</strong> : <cite>pd.dataFrame</cite></p>
+<blockquote class="last">
+<div><p>a light curve represented as a pandas dataframe</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="sndata.LightCurve.remap_filters">
+<em class="property">static </em><code class="descname">remap_filters</code><span class="sig-paren">(</span><em>name</em>, <em>nameDicts</em>, <em>ignore_case=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/lightcurve.html#LightCurve.remap_filters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.LightCurve.remap_filters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sndata.SNANASims">
+<em class="property">class </em><code class="descclassname">sndata.</code><code class="descname">SNANASims</code><span class="sig-paren">(</span><em>headFile</em>, <em>photFile</em>, <em>coerce_inds2int=True</em>, <em>SNANABandNames='ugrizY'</em>, <em>registeredBandNames=('lsstu'</em>, <em>'lsstg'</em>, <em>'lsstr'</em>, <em>'lssti'</em>, <em>'lsstz'</em>, <em>'lssty')</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/snanaio.html#SNANASims"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.SNANASims" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to represent SNANA simulations of a particular class of objects, ie.
+Ia or Non_Ia</p>
+<p class="rubric">Methods</p>
+<dl class="classmethod">
+<dt id="sndata.SNANASims.fromSNANAfileroot">
+<em class="property">classmethod </em><code class="descname">fromSNANAfileroot</code><span class="sig-paren">(</span><em>snanafileroot</em>, <em>location='./'</em>, <em>coerce_inds2int=False</em>, <em>SNANABandNames='ugrizY'</em>, <em>registeredBandNames=('lsstu'</em>, <em>'lsstg'</em>, <em>'lsstr'</em>, <em>'lssti'</em>, <em>'lsstz'</em>, <em>'lssty')</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/snanaio.html#SNANASims.fromSNANAfileroot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.SNANASims.fromSNANAfileroot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class constructor from a root file and a location</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>snanafileroot</strong> : string, mandatory</p>
+<blockquote>
+<div><p>root file name for the SNANA which is the prefix to
+&#8216;_HEAD.FITS&#8217;, or &#8216;_PHOT.FITS&#8217;</p>
+</div></blockquote>
+<p><strong>location</strong> : string, optional defaults to current working directory &#8216;./&#8217;</p>
+<blockquote>
+<div><p>Relative or absolute path to the directory where the head and phot
+files are located</p>
+</div></blockquote>
+<p><strong>snids</strong> : integer/string, optional defaults to None</p>
+<blockquote>
+<div><p>if not None, only SN observations corresponding to SNID snid
+are loaded</p>
+</div></blockquote>
+<p><strong>n</strong> : Integer, defaults to None</p>
+<blockquote class="last">
+<div><p>if not None, only the first n SN light curves are loaded</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="sndata.SNANASims.get_SNANA_photometry">
+<code class="descname">get_SNANA_photometry</code><span class="sig-paren">(</span><em>snid=None</em>, <em>ptrs=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/snanaio.html#SNANASims.get_SNANA_photometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.SNANASims.get_SNANA_photometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the photometry table corresponding to a SN with snid (from the
+head table) or the photometry table within the range of row numbers
+indicated by ptrs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>snid :</strong></p>
+<p class="last"><strong>ptrs :</strong></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="sndata.SNANASims.get_headData">
+<em class="property">static </em><code class="descname">get_headData</code><span class="sig-paren">(</span><em>headFile</em>, <em>coerce_inds2int=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/snanaio.html#SNANASims.get_headData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.SNANASims.get_headData" title="Permalink to this definition">¶</a></dt>
+<dd><p>read the headData of a SNANA simulation and return a dataframe
+representing the simulation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>headFile :</strong></p>
+<p class="last"><strong>coerce_inds2int :</strong></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="sndata.SNANASims.get_photrows">
+<code class="descname">get_photrows</code><span class="sig-paren">(</span><em>row=None</em>, <em>snid=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/snanaio.html#SNANASims.get_photrows"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.SNANASims.get_photrows" title="Permalink to this definition">¶</a></dt>
+<dd><p>return rows of the photometry table corresponding to a SN as listed
+in the head table.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>row :</strong></p>
+<p class="last"><strong>snid :</strong></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="sndata.SNANASims.snanadatafile">
+<em class="property">static </em><code class="descname">snanadatafile</code><span class="sig-paren">(</span><em>snanafileroot</em>, <em>filetype='head'</em>, <em>location='./'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/snanaio.html#SNANASims.snanadatafile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.SNANASims.snanadatafile" title="Permalink to this definition">¶</a></dt>
+<dd><p>obtain the name of the head or phot file of an SNANA simulation
+and dataset</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>snanafileroot</strong> : string, mandatory</p>
+<blockquote>
+<div><p>root file name for the SNANA which is the prefix to
+&#8216;_HEAD.FITS&#8217;, or &#8216;_PHOT.FITS&#8217;</p>
+</div></blockquote>
+<p><strong>filetype</strong> : string, optional defaults to &#8216;head&#8217;</p>
+<blockquote>
+<div><p>&#8216;head&#8217; or &#8216;phot&#8217; depending on whether a summary file or a photometry
+file is being used.</p>
+</div></blockquote>
+<p><strong>location</strong> : string, optional defaults to current working directory &#8216;./&#8217;</p>
+<blockquote>
+<div><p>relative or absolute path to the directory in which the file is
+located</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>string</strong> : absolute path to the SNANA file</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="overview.html" title="previous chapter">Overview</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/API.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, LSST DESC SN Working Group.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/API.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
