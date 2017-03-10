@@ -26,7 +26,7 @@ In terms of simulation formats that we would like to be able to read:
  We will also use these formats to write datasets for simulations.
 
 ## Requirements
-- throughputs : Either install and setup the sims stack 
+- throughputs : Either install and setup the sims stack  
 ## Installation
 
 ## Contributing :

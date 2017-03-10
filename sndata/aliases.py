@@ -28,7 +28,7 @@ def aliasDictionary(sequence, aliases):
     value =standard_string_names
 
     Examples
-    --------
+    ---------
     >>> aliases = dict(time=['mjd','expmjd'], flux=['counts'],\
                        fluxerr=['flux_err', 'fluxerror'], zpsys=['magsys'])
     >>> testSeq = ['mJd', 'band', 'zp', 'Flux', 'fluxError', 'zpsys']
@@ -37,8 +37,9 @@ def aliasDictionary(sequence, aliases):
                                               'mJd': 'time'}
     True
 
+
     Notes:
-    -----
+    ------
     1. It is obviously imperative that the list of possible aliases combined
     for all keys should not have duplicates
     2. The dictionary can be used to change non-standard column names in a
