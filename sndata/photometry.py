@@ -3,6 +3,8 @@ Class for holding Light Curve Data
 """
 from __future__ import absolute_import, print_function, division
 from future.utils import with_metaclass
+__all__ = ['BasePhotometry', 'Photometry']
+
 import abc
 import numpy as np
 import pandas as pd
@@ -10,7 +12,7 @@ from astropy.table import Table
 from .aliases import aliasDictionary
 
 
-__all__ = ['BasePhotometry', 'Photometry']
+
 class BasePhotometry(with_metaclass(abc.ABCMeta, object)):
     def __init__(self, lcs, maxObsHistID, singleLCProps):
         """
