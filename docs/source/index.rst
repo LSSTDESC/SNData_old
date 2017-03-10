@@ -11,6 +11,7 @@ Welcome to SNData's documentation!
    :caption: Contents:
    
    overview
+   requirements
    API
 
 
