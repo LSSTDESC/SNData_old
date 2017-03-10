@@ -1,0 +1,304 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>sndata.analyzelcFits &#8212; SNData 0.0.5dev0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.5dev0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for sndata.analyzelcFits</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">classes and methods to analyze the outputs of light curve characterization</span>
+<span class="sd">routines, particularly for SALT2 light curves</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">cov_utils</span> <span class="k">as</span> <span class="n">cutils</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ResChar&#39;</span><span class="p">]</span>
+<div class="viewcode-block" id="ResChar"><a class="viewcode-back" href="../../API.html#sndata.ResChar">[docs]</a><span class="k">class</span> <span class="nc">ResChar</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class to hold results of characterizing a light curve fit. Mostly</span>
+<span class="sd">    this will be constructed from `sncosmo.utils.res` instances</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">vparam_names</span><span class="p">,</span>
+                 <span class="n">param_names</span><span class="p">,</span>
+                 <span class="n">parameters</span><span class="p">,</span>
+                 <span class="n">covariance</span><span class="p">,</span>
+                 <span class="n">errors</span><span class="p">,</span>
+                 <span class="n">samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">sncosmoModel</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        constructor for class</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vparam_names : list of strings, mandatory</span>
+<span class="sd">            model parameters inferred in the characterization</span>
+<span class="sd">        param_names : list of strings, mandatory</span>
+<span class="sd">            model parameters (complete list)</span>
+<span class="sd">        parameters : list of floats, mandatory</span>
+<span class="sd">            values of all model parameters in same order as param_names</span>
+<span class="sd">        covariance : `numpy.ndarray`, mandatory</span>
+<span class="sd">            Covariance of all the varied parameters. Should be a</span>
+<span class="sd">            symmetric positive definite array of shape(n, n) where</span>
+<span class="sd">            n = len(vparam_names)</span>
+<span class="sd">        samples : `numpy.ndarray`, optional, defaults to None</span>
+<span class="sd">            samples of shape(num, n) where num = number of samples, and</span>
+<span class="sd">            n = len(vparam_names). May not be independent</span>
+<span class="sd">        weights : `np.array` , optional defaults to None</span>
+<span class="sd">            must have length equal to len(samples) if present. For</span>
+<span class="sd">            mcmc_lc, this is usually used as `np.ones`. For nest_lc</span>
+<span class="sd">            the weights are used to calculate quantities</span>
+<span class="sd">        sncsomoModel : `sncosmo.Model`, optional, defaults to None</span>
+<span class="sd">            model returned from sncsomo estimate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">vparam_names</span> <span class="o">=</span> <span class="n">vparam_names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span> <span class="o">=</span> <span class="n">param_names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_covariance</span> <span class="o">=</span> <span class="n">covariance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="n">errors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="n">samples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sncosmoModel</span> <span class="o">=</span> <span class="n">sncosmoModel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample_names</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vparam_names</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="ResChar.fromSNCosmoRes"><a class="viewcode-back" href="../../API.html#sndata.ResChar.fromSNCosmoRes">[docs]</a>    <span class="k">def</span> <span class="nf">fromSNCosmoRes</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">SNCosmoRes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Instantiate this object from an instance of `sncosmo.utils.res`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        SNCosmoRes : instance of `sncosmo.utils.res</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># samples if the method was mcmc/nest_lc but not if max_lc</span>
+        <span class="c1"># weights makes sense for mcmc methods</span>
+
+        <span class="n">res</span><span class="p">,</span> <span class="n">model</span> <span class="o">=</span> <span class="n">SNCosmoRes</span>
+
+        <span class="n">samples</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;samples&#39;</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s1">&#39;samples&#39;</span><span class="p">]</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># if method was nest_lc</span>
+        <span class="k">if</span> <span class="s1">&#39;weights&#39;</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span>
+
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">vparam_names</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">vparam_names</span><span class="p">,</span>
+                   <span class="n">param_names</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">param_names</span><span class="p">,</span>
+                   <span class="n">parameters</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                   <span class="n">covariance</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">covariance</span><span class="p">,</span>
+                   <span class="n">errors</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">errors</span><span class="p">,</span>
+                   <span class="n">samples</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span>
+                   <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+                   <span class="n">sncosmoModel</span><span class="o">=</span><span class="n">model</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return the model parameters as a `pd.Series`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">vparams</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return the values of the varied parameters as a `pd.Series`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">vparameters</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">v</span><span class="p">)]</span>
+                       <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vparam_names</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">vparameters</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vparam_names</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return the covariance as a `pd.DataFrame`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cutils</span><span class="o">.</span><span class="n">covariance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_covariance</span><span class="p">,</span> <span class="n">paramNames</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vparam_names</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns the samples if this is the result of mcmc / nest_lc</span>
+<span class="sd">        characterization</span>
+<span class="sd">        TODO: Not really thinking about nestlc yet</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_samples</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_names</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ResChar.salt_covariance_linear"><a class="viewcode-back" href="../../API.html#sndata.ResChar.salt_covariance_linear">[docs]</a>    <span class="k">def</span> <span class="nf">salt_covariance_linear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0Truth</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="s1">&#39;x0&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">x0Truth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x0</span> <span class="o">=</span> <span class="n">x0Truth</span>
+
+        <span class="n">factor</span> <span class="o">=</span> <span class="o">-</span> <span class="mf">2.5</span> <span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="c1"># drop other parameters like t0</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="n">cutils</span><span class="o">.</span><span class="n">subcovariance</span><span class="p">(</span><span class="n">covariance</span><span class="o">=</span><span class="n">cov</span><span class="p">,</span>
+                                   <span class="n">paramList</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x0&#39;</span><span class="p">,</span> <span class="s1">&#39;x1&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">],</span>
+                                   <span class="n">array</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">covariance</span> <span class="o">=</span> <span class="n">cutils</span><span class="o">.</span><span class="n">log_covariance</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">paramName</span><span class="o">=</span><span class="s1">&#39;x0&#39;</span><span class="p">,</span>
+                                    <span class="n">paramValue</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="n">factor</span><span class="p">)</span>
+
+        <span class="n">covariance</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x0&#39;</span><span class="p">:</span><span class="s1">&#39;mB&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">covariance</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">covariance</span><span class="o">.</span><span class="n">columns</span>
+        <span class="n">covariance</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">covariance</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">covariance</span></div>
+
+
+<div class="viewcode-block" id="ResChar.mu_variance_linear"><a class="viewcode-back" href="../../API.html#sndata.ResChar.mu_variance_linear">[docs]</a>    <span class="k">def</span> <span class="nf">mu_variance_linear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.14</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">3.1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="o">-</span><span class="n">beta</span><span class="p">])</span>
+        <span class="n">_cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">salt_covariance_linear</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">_cov</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span>
+        <span class="n">sc</span> <span class="o">=</span> <span class="n">cutils</span><span class="o">.</span><span class="n">subcovariance</span><span class="p">(</span><span class="n">_cov</span><span class="p">,</span> <span class="n">paramList</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mB&#39;</span><span class="p">,</span> <span class="s1">&#39;x1&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">],</span>
+                                  <span class="n">array</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cutils</span><span class="o">.</span><span class="n">expAVsquare</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="mf">0.</span></div>
+<div class="viewcode-block" id="ResChar.salt_samples"><a class="viewcode-back" href="../../API.html#sndata.ResChar.salt_samples">[docs]</a>    <span class="k">def</span> <span class="nf">salt_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.14</span><span class="p">,</span> <span class="n">beta</span><span class="o">=-</span><span class="mf">3.1</span><span class="p">,</span> <span class="n">MDelta</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">trimMDelta</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return the samples for SALT2 variables</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        alpha : float, optional, defaults to 0.14</span>
+<span class="sd">        beta : float, optional, defaults to 3.1</span>
+<span class="sd">        MDelta : float, or array-like of size len(samples), optional, defaults</span>
+<span class="sd">                to 0.</span>
+<span class="sd">            Offset or environment dependent additive value to obtain the</span>
+<span class="sd">            correct absolute luminosity/ distance modulus.</span>
+<span class="sd">        TrimMDelta : remove MDelta and x0 columns. Used for easier plotting</span>
+<span class="sd">            of posteriors.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        `pd.dataFrame` with extra column names [&#39;mB&#39;, &#39;MDelta&#39;, &#39;mu&#39;]</span>
+
+<span class="sd">        .. note :</span>
+<span class="sd">            1. mu = mB + alpha * x1 - beta * c - MB, Eqn. 4 of JLA paper</span>
+<span class="sd">            While mB is the peak rest frame BessellB magnitude, this is</span>
+<span class="sd">            related -2.5 *np.log10(x0) through an additive correction. To a</span>
+<span class="sd">            very good approximation, it is independent of x1, c values due to</span>
+<span class="sd">            the defining constraints of the SALT2 model.</span>
+<span class="sd">            2. MB is often taken to be environment dependent. Here we absorb</span>
+<span class="sd">            the constant part of MB and the additive correction mentioned</span>
+<span class="sd">            above as MDelta</span>
+<span class="sd">            3. The constant part of MDelta does not matter if the cosmology</span>
+<span class="sd">            likelihood is marginalized analytically over a constant additive</span>
+<span class="sd">            term to the distance modulus.</span>
+<span class="sd">            4. The values alpha = 0.14 and beta = 3.1 are taken from</span>
+<span class="sd">            Table. 10 of the JLA paper. This is merely for convenince. For</span>
+<span class="sd">            actual calculations, these values must be inferred as well.</span>
+<span class="sd">            JLA Paper : http://arxiv.org/pdf/1401.4064v2.pdf; DeltaM</span>
+
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;mB&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;x0&#39;</span><span class="p">])</span>
+        <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;MDelta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">MDelta</span>
+        <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;mu&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;mB&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;x1&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;MDelta&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;MDelta&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;x0&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">samples</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, LSST DESC SN Working Group.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

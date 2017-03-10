@@ -1,0 +1,296 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>sndata.aliases &mdash; SNData 0.0.5dev0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="SNData 0.0.5dev0 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> SNData
+          
+
+          
+          </a>
+
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../requirements.html">Software Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../API.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">SNData</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>sndata.aliases</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for sndata.aliases</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Some utilities for aliases. Used to change dataframe column names to a standard</span>
+<span class="sd"> set of names.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span><span class="p">,</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">future.builtins</span> <span class="k">import</span> <span class="nb">dict</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;aliasDictionary&#39;</span><span class="p">,</span> <span class="s1">&#39;mapSeq2Standard&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="aliasDictionary"><a class="viewcode-back" href="../../API.html#sndata.aliasDictionary">[docs]</a><span class="k">def</span> <span class="nf">aliasDictionary</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">aliases</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a dictionary of</span>
+<span class="sd">    aliases of the form {standard_string_names: list of possible aliases}</span>
+<span class="sd">    this finds occurances of aliases (ignoring capitalization) in the sequence</span>
+<span class="sd">    of strings called sequence and returns a dictionary</span>
+<span class="sd">    Dict(alias: standard_string_name)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sequence : a sequence of strings</span>
+<span class="sd">    aliases : Dictionary with list-valued values</span>
+<span class="sd">        dictionary with keys = standard desired names, value = possible aliases</span>
+<span class="sd">        It is assumed that a single alias only works for a single key</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Dictionary with keys in the sequence of strings that have been identified</span>
+<span class="sd">    as a possible alias of standard_string_names with</span>
+<span class="sd">    value =standard_string_names</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    ---------</span>
+<span class="sd">    &gt;&gt;&gt; aliases = dict(time=[&#39;mjd&#39;,&#39;expmjd&#39;], flux=[&#39;counts&#39;],\</span>
+<span class="sd">                       fluxerr=[&#39;flux_err&#39;, &#39;fluxerror&#39;], zpsys=[&#39;magsys&#39;])</span>
+<span class="sd">    &gt;&gt;&gt; testSeq = [&#39;mJd&#39;, &#39;band&#39;, &#39;zp&#39;, &#39;Flux&#39;, &#39;fluxError&#39;, &#39;zpsys&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; aliasDictionary(testSeq, aliases) == {&#39;Flux&#39;: &#39;flux&#39;, \</span>
+<span class="sd">                                              &#39;fluxError&#39;: &#39;fluxerr&#39;,\</span>
+<span class="sd">                                              &#39;mJd&#39;: &#39;time&#39;}</span>
+<span class="sd">    True</span>
+
+
+<span class="sd">    Notes:</span>
+<span class="sd">    ------</span>
+<span class="sd">    1. It is obviously imperative that the list of possible aliases combined</span>
+<span class="sd">    for all keys should not have duplicates</span>
+<span class="sd">    2. The dictionary can be used to change non-standard column names in a</span>
+<span class="sd">    `pd.DataFrame` through the use of `dataFrame.rename(columns=aliasDictionary,</span>
+<span class="sd">    inplace=True)`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Check that there is no string which might be the alias of more than one</span>
+    <span class="c1"># variable</span>
+    <span class="n">_valueList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">aliases</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">l</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">_valueList</span><span class="p">))</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">_valueList</span><span class="p">)</span>
+
+    <span class="c1"># insert the standard name in the list of values</span>
+    <span class="c1"># (necesary for the case where variable names are std names with caps)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="p">[</span><span class="n">aliases</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+</span> <span class="n">aliases</span><span class="p">[</span><span class="n">key</span><span class="p">]})</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">aliases</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
+
+    <span class="c1"># invert aliases dictionary to get</span>
+    <span class="n">inverse_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="p">[</span><span class="n">inverse_dict</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">alias</span><span class="p">:</span><span class="n">aliastuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]})</span>
+         <span class="k">for</span> <span class="n">aliastuple</span> <span class="ow">in</span> <span class="n">aliases</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span> <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">aliastuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+
+    <span class="c1"># Account for capitalization issues</span>
+    <span class="n">testDict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">s</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">)</span>
+    <span class="n">aliasedSet</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">inverse_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">testDict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+
+    <span class="c1"># return the dictionary</span>
+    <span class="n">aliasDict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">testDict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">inverse_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">aliasedSet</span>
+                     <span class="k">if</span> <span class="n">testDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">!=</span> <span class="n">inverse_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">aliasDict</span></div>
+
+<div class="viewcode-block" id="mapSeq2Standard"><a class="viewcode-back" href="../../API.html#sndata.mapSeq2Standard">[docs]</a><span class="k">def</span> <span class="nf">mapSeq2Standard</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">aliasDict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    given a sequence of strings return a list of the strings, replacing those</span>
+<span class="sd">    strings in the input sequence which are keys in the dictionary by their</span>
+<span class="sd">    dictionary values</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ---------</span>
+<span class="sd">    sequence : sequence of strings</span>
+
+<span class="sd">    aliasDict : Dictionary</span>
+<span class="sd">        Dictionary of aliases where the keys are strings in the sequence and</span>
+<span class="sd">        the values are the standard names associated with those strings</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of strings</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; aliases = dict(time=[&#39;mjd&#39;,&#39;expmjd&#39;], flux=[&#39;counts&#39;], fluxerr=[&#39;flux_err&#39;, &#39;fluxerror&#39;]) </span>
+<span class="sd">    &gt;&gt;&gt; testSeq = [&#39;mJd&#39;, &#39;band&#39;, &#39;zp&#39;, &#39;Flux&#39;, &#39;fluxError&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; aliasDict = aliasDictionary(testSeq, aliases)</span>
+<span class="sd">    &gt;&gt;&gt; mapSeq2Standard(testSeq, aliasDict) == [&#39;time&#39;, &#39;band&#39;, &#39;zp&#39;, &#39;flux&#39;, &#39;fluxerr&#39;]</span>
+<span class="sd">    True</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">std</span> <span class="o">=</span> <span class="p">[</span><span class="n">aliasDict</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">aliasDict</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">std</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, LSST DESC SN Working Group.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.0.5dev0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

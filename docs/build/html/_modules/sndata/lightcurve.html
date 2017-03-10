@@ -1,0 +1,427 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>sndata.lightcurve &mdash; SNData 0.0.5dev0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="SNData 0.0.5dev0 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> SNData
+          
+
+          
+          </a>
+
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../requirements.html">Software Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../API.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">SNData</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>sndata.lightcurve</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for sndata.lightcurve</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Class for holding Light Curve Data</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">future.utils</span> <span class="k">import</span> <span class="n">with_metaclass</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">astropy.table</span> <span class="k">import</span> <span class="n">Table</span>
+<span class="kn">import</span> <span class="nn">sncosmo</span>
+<span class="kn">from</span> <span class="nn">.aliases</span> <span class="k">import</span> <span class="n">aliasDictionary</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;BaseLightCurve&#39;</span><span class="p">,</span> <span class="s1">&#39;LightCurve&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="BaseLightCurve"><a class="viewcode-back" href="../../API.html#sndata.BaseLightCurve">[docs]</a><span class="k">class</span> <span class="nc">BaseLightCurve</span><span class="p">(</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">,</span> <span class="nb">object</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract Base Class for Light Curve Data showing methods that need to be</span>
+<span class="sd">    implemented.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractproperty</span>
+    <span class="k">def</span> <span class="nf">props</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractproperty</span>
+    <span class="k">def</span> <span class="nf">lightCurve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        `pd.DataFrame` holding the lightCurve information. There can be more</span>
+<span class="sd">        columns, but the following columns are mandatory:</span>
+<span class="sd">        [&#39;mjd&#39;, &#39;band&#39;, &#39;flux&#39;, &#39;fluxerr&#39;, &#39;zp&#39;, &#39;zpsys&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">snCosmoLC</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coaddTimes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">coaddedLC</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coaddTimes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">remap_filters</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">bandNameDict</span><span class="p">,</span> <span class="n">ignore_case</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">missingColumns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lcdf</span><span class="p">):</span>
+
+        <span class="n">notFound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mandatoryColumns</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">lcdf</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">notFound</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mandatoryColumns</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A list of mandatory columns in the light curve dataFrame with</span>
+<span class="sd">        possible aliases in `self.mandatoryColumnAliases`.</span>
+
+<span class="sd">        mjd : time</span>
+<span class="sd">        band : string</span>
+<span class="sd">        flux : model flux</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">reqd</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;mjd&#39;</span><span class="p">,</span> <span class="s1">&#39;band&#39;</span><span class="p">,</span> <span class="s1">&#39;flux&#39;</span><span class="p">,</span> <span class="s1">&#39;fluxerr&#39;</span><span class="p">,</span> <span class="s1">&#39;zp&#39;</span><span class="p">,</span> <span class="s1">&#39;zpsys&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">reqd</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">columnAliases</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        dictionary that maps standard names as keys to a possible set of</span>
+<span class="sd">        aliases</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">aliases</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">aliases</span><span class="p">[</span><span class="s1">&#39;zp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;zp&#39;</span><span class="p">]</span>
+        <span class="n">aliases</span><span class="p">[</span><span class="s1">&#39;mjd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;expmjd&#39;</span><span class="p">,</span> <span class="s1">&#39;date&#39;</span><span class="p">]</span>
+        <span class="n">aliases</span><span class="p">[</span><span class="s1">&#39;zpsys&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;magsys&#39;</span><span class="p">]</span>
+        <span class="n">aliases</span><span class="p">[</span><span class="s1">&#39;band&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;filter&#39;</span><span class="p">,</span> <span class="s1">&#39;filtername&#39;</span><span class="p">,</span> <span class="s1">&#39;bandname&#39;</span><span class="p">,</span> <span class="s1">&#39;bands&#39;</span><span class="p">,</span> <span class="s1">&#39;flt&#39;</span><span class="p">]</span>
+        <span class="n">aliases</span><span class="p">[</span><span class="s1">&#39;flux&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;fluxcal&#39;</span><span class="p">]</span>
+        <span class="n">aliases</span><span class="p">[</span><span class="s1">&#39;fluxerr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;flux_err&#39;</span><span class="p">,</span> <span class="s1">&#39;flux_errs&#39;</span><span class="p">,</span> <span class="s1">&#39;fluxerror&#39;</span><span class="p">,</span> <span class="s1">&#39;fluxcalerr&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">aliases</span></div>
+
+<div class="viewcode-block" id="LightCurve"><a class="viewcode-back" href="../../API.html#sndata.LightCurve">[docs]</a><span class="k">class</span> <span class="nc">LightCurve</span><span class="p">(</span><span class="n">BaseLightCurve</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A Class to represent light curve data.  Light curve data is often available</span>
+<span class="sd">    with different kinds of column names. This class homogenizes them to a set</span>
+<span class="sd">    of standard names, and allows simple calculations to be based on the same</span>
+<span class="sd">    variable names &#39;mjd&#39;, &#39;band&#39;, &#39;flux&#39;, &#39;fluxerr&#39;, &#39;zp&#39;, &#39;zpsys&#39; which denote</span>
+<span class="sd">    the time of observation, bandpass of observation, the flux and flux</span>
+<span class="sd">    uncertainty of the observation.</span>
+
+<span class="sd">    zp represents the zero point to convert the flux value to the phsyical flux</span>
+<span class="sd">    using the zero point system zpsys.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lcdf</span><span class="p">,</span> <span class="n">bandNameDict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_case</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">propDict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Instantiate Light Curve class</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        lcdf : `pd.DataFrame`, mandatory</span>
+<span class="sd">            light curve information, must contain columns `mjd`, `band`, `flux`,</span>
+<span class="sd">            `flux_err`, `zp`, `zpsys`</span>
+<span class="sd">        bandNameDict : dictionary, optional, default to None</span>
+<span class="sd">            dictionary of the values in the &#39;band&#39; column or its alias, and</span>
+<span class="sd">            values that it should be mapped to.</span>
+<span class="sd">        ignore_case : bool, optional, defaults to True</span>
+<span class="sd">            ignore the case of the characters in the strings representing</span>
+<span class="sd">            bandpasses</span>
+<span class="sd">        propDict : Dictionary, optional, defaults to None</span>
+<span class="sd">            a dictionary of properties associated with the light curve</span>
+<span class="sd">        Example</span>
+<span class="sd">        -------</span>
+<span class="sd">        &gt;&gt;&gt; from analyzeSN import LightCurve</span>
+<span class="sd">        &gt;&gt;&gt; ex_data = sncosmo.load_example_data()</span>
+<span class="sd">        &gt;&gt;&gt; lc = LightCurve(ex_data.to_pandas()) </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">aliases</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">columnAliases</span>
+        <span class="n">standardNamingDict</span> <span class="o">=</span> <span class="n">aliasDictionary</span><span class="p">(</span><span class="n">lcdf</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">aliases</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">standardNamingDict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lcdf</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">standardNamingDict</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">missingColumns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missingColumns</span><span class="p">(</span><span class="n">lcdf</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missingColumns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;light curve data has missing columns&#39;</span><span class="p">,</span>
+                             <span class="n">missingColumns</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bandNameDict</span> <span class="o">=</span> <span class="n">bandNameDict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lightCurve</span>  <span class="o">=</span> <span class="n">lcdf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignore_case</span> <span class="o">=</span> <span class="n">ignore_case</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_propDict</span> <span class="o">=</span> <span class="n">propDict</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">props</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propDict</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">fromSALTFormat</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
+        <span class="n">_lc</span> <span class="o">=</span> <span class="n">sncosmo</span><span class="o">.</span><span class="n">read_lc</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;salt2&#39;</span><span class="p">)</span>
+        <span class="n">lc</span> <span class="o">=</span> <span class="n">_lc</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>
+        <span class="n">lc</span><span class="o">.</span><span class="n">MagSys</span> <span class="o">=</span> <span class="s1">&#39;ab&#39;</span>
+        <span class="k">def</span> <span class="nf">filtername</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39;megacam&#39;</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="k">return</span> <span class="s1">&#39;megacam&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">banddict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">filtername</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">+</span> <span class="n">key</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">lc</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">lc</span><span class="p">,</span> <span class="n">bandNameDict</span><span class="o">=</span><span class="n">banddict</span><span class="p">,</span> <span class="n">ignore_case</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">propDict</span><span class="o">=</span><span class="n">_lc</span><span class="o">.</span><span class="n">meta</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="LightCurve.missingColumns"><a class="viewcode-back" href="../../API.html#sndata.LightCurve.missingColumns">[docs]</a>    <span class="k">def</span> <span class="nf">missingColumns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lcdf</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return a set of columns in the light curve dataframe that are missing</span>
+<span class="sd">        from the mandatory set of columns</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        lcdf : `pd.dataFrame`</span>
+<span class="sd">            a light curve represented as a pandas dataframe</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">notFound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mandatoryColumns</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">lcdf</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">notFound</span></div>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="LightCurve.remap_filters"><a class="viewcode-back" href="../../API.html#sndata.LightCurve.remap_filters">[docs]</a>    <span class="k">def</span> <span class="nf">remap_filters</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">nameDicts</span><span class="p">,</span> <span class="n">ignore_case</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ignore_case</span><span class="p">:</span>
+                <span class="n">_nameDicts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">value</span><span class="p">)</span>
+                                  <span class="k">for</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">nameDicts</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> 
+                <span class="k">return</span> <span class="n">_nameDicts</span><span class="p">[</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">nameDicts</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;values for old filter </span><span class="si">{}</span><span class="s1"> not implemented&#39;</span><span class="p">,</span>
+                                       <span class="n">name</span><span class="p">)</span></div>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">lightCurve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The lightcurve in native format</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># light curve</span>
+        <span class="n">_lc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lightCurve</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># return the light curve</span>
+        <span class="n">_lc</span><span class="o">.</span><span class="n">band</span> <span class="o">=</span> <span class="n">_lc</span><span class="o">.</span><span class="n">band</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bandNameDict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_lc</span><span class="o">.</span><span class="n">band</span> <span class="o">=</span> <span class="n">_lc</span><span class="o">.</span><span class="n">band</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">remap_filters</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bandNameDict</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">ignore_case</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">_lc</span>
+
+    <span class="k">def</span> <span class="nf">snCosmoLC</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coaddTimes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mjdBefore</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">minmjd</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">lc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coaddedLC</span><span class="p">(</span><span class="n">coaddTimes</span><span class="o">=</span><span class="n">coaddTimes</span><span class="p">,</span> <span class="n">mjdBefore</span><span class="o">=</span><span class="n">mjdBefore</span><span class="p">,</span>
+                            <span class="n">minmjd</span><span class="o">=</span><span class="n">minmjd</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">mjd</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Table</span><span class="o">.</span><span class="n">from_pandas</span><span class="p">(</span><span class="n">lc</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LightCurve.coaddedLC"><a class="viewcode-back" href="../../API.html#sndata.LightCurve.coaddedLC">[docs]</a>    <span class="k">def</span> <span class="nf">coaddedLC</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coaddTimes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mjdBefore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minmjd</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return a coadded light curve</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">coaddTimes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lightCurve</span>
+
+        <span class="c1"># otherwise perform coadd</span>
+        <span class="k">if</span> <span class="n">minmjd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">mjdBefore</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mjdBefore</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="n">minmjd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lightCurve</span><span class="o">.</span><span class="n">mjd</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">-</span> <span class="n">mjdBefore</span>
+
+        <span class="n">lc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lightCurve</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">lc</span><span class="p">[</span><span class="s1">&#39;discreteTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">lc</span><span class="p">[</span><span class="s1">&#39;mjd&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">minmjd</span><span class="p">)</span> <span class="o">//</span> <span class="n">coaddTimes</span>
+        <span class="n">lc</span><span class="p">[</span><span class="s1">&#39;discreteTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lc</span><span class="o">.</span><span class="n">discreteTime</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+
+        <span class="n">aggregations</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;mjd&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span>
+                        <span class="s1">&#39;flux&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span>
+                        <span class="s1">&#39;fluxerr&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> 
+                        <span class="s1">&#39;discreteTime&#39;</span><span class="p">:</span> <span class="s1">&#39;count&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;zp&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span>
+                        <span class="s1">&#39;zpsys&#39;</span><span class="p">:</span> <span class="s1">&#39;first&#39;</span><span class="p">}</span>
+        <span class="n">groupedbynightlyfilters</span> <span class="o">=</span> <span class="n">lc</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;discreteTime&#39;</span><span class="p">,</span><span class="s1">&#39;band&#39;</span><span class="p">])</span>
+        <span class="n">glc</span> <span class="o">=</span> <span class="n">groupedbynightlyfilters</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">aggregations</span><span class="p">)</span>
+        <span class="n">glc</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="s1">&#39;band&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">glc</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">discreteTime</span><span class="o">=</span><span class="s1">&#39;numCoadded&#39;</span><span class="p">),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> 
+        <span class="n">glc</span><span class="p">[</span><span class="s1">&#39;CoaddedSNR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">glc</span><span class="p">[</span><span class="s1">&#39;flux&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">glc</span><span class="p">[</span><span class="s1">&#39;fluxerr&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">glc</span></div></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, LSST DESC SN Working Group.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.0.5dev0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
