@@ -117,6 +117,17 @@ class LightCurve(BaseLightCurve):
         >>> ex_data = sncosmo.load_example_data()
         >>> lc = LightCurve(ex_data.to_pandas()) 
         """
+
+        aliases = self.columnAliases
+        standardNamingDict = aliasDictionary(lcdf.columns, aliases)
+        if len(standardNamingDict) > 0:
+            lcdf.rename(columns=standardNamingDict, inplace=True)
+
+        missingColumns = self.missingColumns(lcdf)
+        if len(missingColumns) > 0:
+            raise ValueError('light curve data has missing columns',
+                             missingColumns)
+
         self.bandNameDict = bandNameDict
         self._lightCurve  = lcdf
         self.ignore_case = ignore_case
@@ -171,25 +182,13 @@ class LightCurve(BaseLightCurve):
         # light curve
         _lc = self._lightCurve.copy()
 
-        # Rename columns to standard names if necessary
-        aliases = self.columnAliases
-        standardNamingDict = aliasDictionary(_lc.columns, aliases)
-        if len(standardNamingDict) > 0:
-            _lc.rename(columns=standardNamingDict, inplace=True)
-
-        # If all  mandatory columns exist return the light curve, or
-        # raise ValueError citing missing columns
-        missingColumns = self.missingColumns(_lc)
-        if len(missingColumns) > 0:
-            raise ValueError('light curve data has missing columns',
-                             missingColumns)
-        else:
-            _lc.band = _lc.band.apply(lambda x: x.strip())
-            if self.bandNameDict is not None:
-                _lc.band = _lc.band.apply(lambda x:
-                                          self.remap_filters(x, self.bandNameDict,
-                                                        self.ignore_case))
-            return _lc
+        # return the light curve
+        _lc.band = _lc.band.apply(lambda x: x.strip())
+        if self.bandNameDict is not None:
+            _lc.band = _lc.band.apply(lambda x:
+                                      self.remap_filters(x, self.bandNameDict,
+                                                    self.ignore_case))
+        return _lc
 
     def snCosmoLC(self, coaddTimes=None, mjdBefore=0., minmjd=None):
         lc = self.coaddedLC(coaddTimes=coaddTimes, mjdBefore=mjdBefore,

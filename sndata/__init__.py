@@ -12,6 +12,7 @@ except:
 from .aliases import *
 from .lightcurve import *
 from .photometry import *
+from .snanaio import *
 
 here = __file__
 basedir = os.path.split(here)[0]
