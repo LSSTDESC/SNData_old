@@ -152,6 +152,16 @@ class LightCurve(BaseLightCurve):
         return cls(lc, bandNameDict=banddict, ignore_case=True, propDict=_lc.meta)
 
 
+    @classmethod
+    def fromSNChalFormat(cls, fname):
+        _lc = sncosmo.read_lc(fname, format='salt2')
+        lc = _lc.to_pandas()
+        lc.MagSys = 'ab'
+        banddict = dict((key.lower(), filtername(key) + key[-1])
+                        for key in lc.Filter.unique())
+        return cls(lc, bandNameDict=banddict, ignore_case=True, propDict=_lc.meta)
+
+
     def missingColumns(self, lcdf):
         """
         return a set of columns in the light curve dataframe that are missing

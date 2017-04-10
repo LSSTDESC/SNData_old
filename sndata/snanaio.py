@@ -3,6 +3,7 @@ import fitsio
 import pandas as pd
 import numpy as np
 import os
+import gzip
 from .lightcurve import LightCurve
 from astropy.table import Table, Column
 
@@ -74,6 +75,88 @@ class SNANASims(object):
                    coerce_inds2int=coerce_inds2int, SNANABandNames=SNANABandNames,
                    registeredBandNames=registeredBandNames)
     
+    @classmethod
+    def SNChalParser(cls,snanafileroot, zipped=True, location='./',
+                          coerce_inds2int=False, 
+                          SNANABandNames=lsst_bandNames,
+                          registeredBandNames=lsst_bandpassNames):
+
+        '''
+        Reads and returns supernovae data and metadata.
+        * filename is a string containing the path to the supernovae light curve data
+        * survey is a string containing the survey name
+        * snid is an integer containing the supernova ID
+        * ra is a float containing the RA of the supernova
+        * dec is a float containing the Dec of the supernova
+        * mwebv is a float describing the dust extinction
+        * hostid is an integer containing the host galaxy ID
+        * hostz is an array of floats containing the photometric redshift of the galaxy and the error on the measurement
+        * spec is an array of floats containing the redshift
+        * sim_type is a string containing the supernova type
+        * sim_z is a float containing the redshift of the supernova
+        * obs is a pandas dataframe containing [observation time, filter, fluxes, fluxe errors]
+        '''
+
+        location = os.path.abspath(location)
+        filename = os.path.join(location, snanafileroot)
+
+        survey = snid = iauc = ra = decl = fake = mwebv = hostid = hostz = spec = sim_type = sim_z = filters =    None
+        if zipped:
+            operator = gzip.open
+            lcoperator = gzip.GzipFile
+        else:
+            operator = open
+            lcoperator = str
+
+        with operator(filename, 'rb') as f:
+            for lineno,line in enumerate(f):
+                s = line.split(':')
+                if len(s) <= 0:
+                    continue
+                if s[0] == 'SURVEY':
+                    survey = s[1].strip()
+                elif s[0] == 'SNID':
+                    snid = int(s[1].strip())
+                elif s[0] == 'IAUC':
+                    iauc = s[1].strip()
+                elif s[0] == 'FILTERS':
+                    filters = s[1].strip()
+                elif s[0] == 'SNTYPE':
+                    sn_type = int(s[1].strip())
+                elif s[0] == 'RA':
+                    ra = float(s[1].split('deg')[0].strip())
+                elif s[0] == 'DECL':
+                    decl = float(s[1].split('deg')[0].strip())
+                elif s[0] == 'MWEBV':
+                    mwebv = float(s[1].split('MW')[0].strip())
+                elif s[0] == 'FAKE':
+                    fake = int(s[1].split('(')[0].strip())
+                elif s[0] == 'REDSHIFT_SPEC':
+                    spec = float(s[1].split('+-')[0].strip()), float(s[1].split('+-')[1]    .strip())
+                elif s[0] == 'HOST_GALAXY_GALID':
+                    hostid = int(s[1].strip())
+                elif s[0] == 'HOST_GALAXY_PHOTO-Z':
+                    hostz = float(s[1].split('+-')[0].strip()), float(s[1].split('+-')[1    ].strip())
+                elif s[0] == 'VARLIST':
+                    break
+
+        lightcurve = pd.read_table(lcoperator(filename), sep='\s+', header=0, 
+                            skiprows= lineno, skipfooter=1,
+                            comment='DETECTION', engine='python',
+                            usecols=[1,2,3,4,5])
+        lightcurve['SNR'] = lightcurve['FLUXCAL']/lightcurve['FLUXCALERR']
+        lightcurve['MAG'] = -2.5*np.log10(lightcurve['FLUXCAL'])+27.5
+        lightcurve['MAGERR'] = 2.5*np.log10(lightcurve['FLUXCALERR'])
+        lightcurve['ZP'] = [27.5 for i in range(len(lightcurve['MAG']))]
+        lightcurve['ZPSYS'] = ['AB' for i in range(len(lightcurve['MAG']))]
+         
+        params = {'survey': survey, 'snid': snid, 'sn_type': sn_type,
+                  'ra': ra, 'decl': decl, 'iauc': iauc,
+                  'mwebv': mwebv, 'hostid': hostid, 'hostz': hostz, 'spec': spec, 
+                  'filename': filename}
+
+         return lightcurve,params
+
     @staticmethod
     def snanadatafile(snanafileroot, filetype='head', location='./'):
         '''
