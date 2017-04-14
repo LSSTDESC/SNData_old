@@ -332,4 +332,7 @@ class SNChalSims(SNANASims):
             return self.phot.loc[ptrs[0]:ptrs[1]]
         elif snid is not None:
             return self.phot.query('snid ==' + str(snid)).reset_index(drop=True)
+
+#            return LightCurve(lcdf, bandNameDict=self.bandNameDict, ignore_case=True)
+
         
