@@ -3,7 +3,9 @@ Class for holding Light Curve Data
 """
 from __future__ import absolute_import, print_function, division
 from future.utils import with_metaclass
+from future.moves.itertools import zip_longest
 import abc
+from collections import Sequence
 import numpy as np
 import pandas as pd
 from astropy.table import Table
@@ -116,7 +118,6 @@ class LightCurve(BaseLightCurve):
         >>> ex_data = sncosmo.load_example_data()
         >>> lc = LightCurve(ex_data.to_pandas()) 
         """
-
         aliases = self.columnAliases
         standardNamingDict = aliasDictionary(lcdf.columns, aliases)
         if len(standardNamingDict) > 0:
@@ -233,7 +234,7 @@ class LightCurve(BaseLightCurve):
             avg_cols += list(additional_cols)
         if copy:
             lcs = lcs.copy()
-    
+ 
         if 'weights' not in lcs.columns:
             if 'fluxerr' not in lcs.columns:
                 raise ValueError("Either fluxerr or weights must be a column in the dataFrame")
@@ -245,23 +246,30 @@ class LightCurve(BaseLightCurve):
                 #else:
                 lcs['weighted_' + col] = lcs[col] *lcs['weights']
         return lcs
+
     @staticmethod
-    def coadd(preProcessedlcs, include_snid=True,
-              cols=('mjd', 'flux', 'fluxerr', 'zp','zpsys'),
-              additionalAvgCols=None,
-              additionalColsKept=None,
-              keepAll=False,
-              keepCounts=True):
+    def coaddpreprocessed(preProcessedlcs, include_snid=True,
+                          cols=('mjd', 'flux', 'fluxerr', 'zp', 'zpsys'),
+                          additionalAvgCols=None,
+                          additionalColsKept=None,
+                          additionalAggFuncs='first',
+                          keepAll=False,
+                          keepCounts=True):
         """
+        Parameters
+        ----------
+        preProcessedlcs :
+        include_snid :
+        cols :
         additionalAvgCols : list of strings
         
         .. note:: These methods are meant to be applied to photometric tables
         as well
         """
-        grouping=['band', 'night']
+        grouping = ['band', 'night']
         if include_snid:
             grouping = ['snid'] + grouping
-        
+ 
         default_avg_cols = ['mjd', 'flux', 'zp']
         avg_cols = default_avg_cols
         
@@ -269,22 +277,50 @@ class LightCurve(BaseLightCurve):
             avg_cols += additionalAvgCols
             
         default_add_cols = ['zpsys']
-        add_cols = default_add_cols
-        if additionalColsKept is not None:
-            add_cols += additionalColsKept
         
         lcs = preProcessedlcs
         
         
         #lcs = _preprocess(lcs, cols=cols, timeStep=timeStep, timeOffset=timeOffset)
         grouped = lcs.groupby(grouping)
+
         aggdict = dict(('weighted_' + col, np.sum) for col in avg_cols)
         aggdict['weights'] = np.sum
         if keepCounts:
             lcs['numExpinCoadd'] = lcs.mjd.copy()
             aggdict['numExpinCoadd'] = 'count'
-        for col in add_cols:
-            aggdict[col] = 'first'
+            aggdict['zpsys'] = 'first'
+
+        # The columns we will finally keep
+        keptcols = grouping + ['zpsys']
+
+        # interpret type of additionalAggFuncs
+        # Assuming types are 
+        #   1. tuple of aggregate functions (sequence) 
+        #   2. string aggregate functions common to all eg. 'first'
+        #   3. method aggregate functions common to all eg. np.sum
+        if additionalColsKept is not None:
+            aggFuncScalar = True
+            if isinstance(additionalAggFuncs, basestring):
+                aggFuncScalar = True
+            elif isinstance(additionalAggFuncs, Sequence):
+                aggFuncScalar = False
+                if len(additionalAggFuncs) != len(additionalColsKept):
+                    raise ValueError('if sequence, length of aggfuncs and additionalColsKept should match')
+            else:
+                aggFuncScalar = True
+
+            if aggFuncScalar:
+                newaggs = zip_longest(additionalColsKept, (additionalAggFuncs,),
+                                      fillvalue=additionalAggFuncs)
+            else:
+                newaggs = zip(additionalColsKept, additionalAggFuncs)
+            for (col, val) in newaggs:
+                aggdict[col]=val
+
+            # Add these columns to the list keptcols
+            keptcols += list(additionalColsKept)
+
         
         x = grouped.agg(aggdict)
     
@@ -293,10 +329,9 @@ class LightCurve(BaseLightCurve):
         yy = x.reset_index()[weighted_cols].apply(lambda y: y/x.weights.values, axis=0)
         yy['weighted_fluxerr_coadded'] = 1.0 / np.sqrt(x.reset_index()['weights'])#/x.reset_index()['weighted_fluxerr']**2)#.apply(lambda y: y/x.weights_squared.values)#/x.weights_squared.values)
         yy.rename(columns=dict((col, col.split('_')[1]) for col in yy.columns), inplace=True)
-        keepcols = grouping + add_cols
         if keepCounts:
-            keepcols += ['numExpinCoadd']
-        return x.reset_index()[keepcols].join(yy)
+            keptcols += ['numExpinCoadd']
+        return x.reset_index()[keptcols].join(yy)
 
     def coaddedLC(self,
                   coaddTimes=None,
@@ -315,8 +350,8 @@ class LightCurve(BaseLightCurve):
             else:
                 minmjd = self.lightCurve.mjd.min() - mjdBefore
 
-	# Does the light curve have `snid` 
-	include_snid = 'snid' in self.lightCurve.columns
+        # Does the light curve have `snid`
+        include_snid = 'snid' in self.lightCurve.columns
 
         # preprocess the light curve for coaddition
         if not sanitize:
@@ -327,14 +362,14 @@ class LightCurve(BaseLightCurve):
                                       avg_cols=coaddedValues,
                                       additional_cols=None,
                                       copy=True)
-	lc = self.coadd(lc, 
-			include_snid=include_snid,
-		        cols=coaddedValues,
-			additionalAvgCols=None,
-			additionalColsKept=None,
-			keepAll=False,
-			keepCounts=True)
-	return lc
+        lc = self.coaddpreprocessed(lc,
+			            include_snid=include_snid,
+		                    cols=coaddedValues,
+			            additionalAvgCols=None,
+			            additionalColsKept=None,
+			            keepAll=False,
+                                    keepCounts=True)
+        return lc
     def _coaddedLC(self, coaddTimes=None, mjdBefore=None, minmjd=None):
         """
         return a coadded light curve

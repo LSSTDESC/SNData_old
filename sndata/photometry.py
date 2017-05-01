@@ -1,17 +1,120 @@
 """
-Class for holding Light Curve Data
+Class for holding Photometry Tables
 """
 from __future__ import absolute_import, print_function, division
 from future.utils import with_metaclass
-__all__ = ['BasePhotometry', 'Photometry']
+
+__all__ = ['BasePhotometry', 'Photometry', 'PhotTables']
 
 import abc
 import numpy as np
 import pandas as pd
 from astropy.table import Table
 from .aliases import aliasDictionary
+from .lightcurve import LightCurve
+
+class PhotTables(object):
+    """
+    Data Structures for representing photometry tables or collections of light
+    curves. The minimal requirement is that this has all the columns of a
+    supernova light curve, but also an index to identify the SN.
+    """
+    def __init__(self, df, sanitize_nans=True):
+        """
+        Instantiate the photometry table
+        Parameters
+        ----------
+        df: `pd.DataFrame`
+            table of photometry containing at least the following columns
+            ('snid', 'mjd', 'flux', 'fluxerr', 'zp', 'zpsys') or aliases
+            thereof. Currently, the aliases are standardized using `LightCurve`
+            functionality
+        sanitize_nans: `Bool`, defaults to True
+            if `True`, `nans` in the table are replaced using
+            `LightCurve.sanitize_nan`
+        """
+        # standardized names
+        self._lcs = LightCurve(df)
+        self._lcs = self._lcs.lightCurve
+        self.nan_sanitized = sanitize_nans
+        lcs = self._lcs.copy()
+        if self.nan_sanitized:
+            lcs = LightCurve.sanitize_nan(lcs)
+        self.lcs = lcs
 
 
+    @property
+    def mandatoryColumns(self):
+        """
+        A list of mandatory columns in photTables dataFrame with
+        possible aliases in `self.mandatoryColumnAliases`.
+
+        We need to have the mandatory columns for a light curve and `snid`
+        """
+        new = set(['snid'])
+
+        # columns from a light curve
+        reqd = set(['mjd', 'band', 'flux', 'fluxerr', 'zp', 'zpsys']).union(new)
+        return reqd
+
+    def coaddedTable(self, timeOffset=0., timeStep=1.0, 
+                     avg_cols=('mjd', 'flux', 'fluxerr', 'zp'),
+                     additionalAvgCols=None,
+                     additionalColsKept=('tileID', 'fieldID', 'zpsys'),
+                     additionalAggFuncs=('first', 'first', 'first'),
+                     prepend_colNames='coadd_'):
+        """
+        returns the photometry table coadded over a timeStep of `timeStep` and
+        offset of `timeOffset`. 
+
+        Parameters
+        ----------
+        timeOffset : float, unit of days, defaults to 0.
+            offset used in discretization of time for coaddition
+        timeStep : float, units of days, defaults to 1.0 
+            time period over which ovservations are coadded
+        avg_cols : tuple of column names, defaults to light curve defaults
+            columns in the photometry table over which inverse variance
+            weighted averages are desired. While `fluxerr` does not satisfy
+            the above definition it is included too.
+        additionalAvgCols : tuple, deprecated, will probably be removed
+            meant to be additional column names which will also be averaged with
+            the same weights
+        additionalColsKept : tuple of strings
+            Columns in the photometry table that are desired to be included in
+            the coadded result but do not require weighted averages.
+        additionalAggFuncs : aggregate function or tuple thereof
+            single aggregate function common to all the 
+        prepend_colNames : string, defaults to 'coadd_'
+            string to be prepended to column names aside from `snid`, if left
+            as `None`, then no prepending will happen
+        """
+        include_snid = 'snid' in self.lcs.columns
+        if not include_snid:
+            raise ValueError('the photTable does not include a column for SNID\n')
+
+        lcs = self.lcs.copy()
+        lcs = LightCurve.discretize_time(lcs, timeOffset=timeOffset, timeStep=timeStep)
+        lcs = LightCurve.add_weightedColumns(lcs,
+                                      avg_cols=avg_cols,
+                                      additional_cols=additionalAvgCols,
+                                      copy=True)
+        weightedcols = list(avg_cols)
+        if additionalAvgCols is not None:
+            weightedcols += list(additionalAvgCols)
+        
+        lcs = LightCurve.coaddpreprocessed(lcs, include_snid=include_snid,
+                                           cols=weightedcols,
+                                           additionalColsKept=additionalColsKept,
+                                           additionalAggFuncs='first',
+                                           keepAll=False,
+                                           keepCounts=True)
+        if prepend_colNames is not None:
+            coldict = dict((col, prepend_colNames + col) for col in lcs.columns
+                           if col != 'snid') 
+            lcs.rename(columns=coldict, inplace=True)
+
+        return lcs
 
 class BasePhotometry(with_metaclass(abc.ABCMeta, object)):
     def __init__(self, lcs, maxObsHistID, singleLCProps):
