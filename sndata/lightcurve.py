@@ -3,7 +3,9 @@ Class for holding Light Curve Data
 """
 from __future__ import absolute_import, print_function, division
 from future.utils import with_metaclass
+from future.moves.itertools import zip_longest
 import abc
+from collections import Sequence
 import numpy as np
 import pandas as pd
 from astropy.table import Table
@@ -12,7 +14,6 @@ from .aliases import aliasDictionary
 
 
 __all__ = ['BaseLightCurve', 'LightCurve']
-
 
 class BaseLightCurve(with_metaclass(abc.ABCMeta, object)):
     """
@@ -40,7 +41,7 @@ class BaseLightCurve(with_metaclass(abc.ABCMeta, object)):
         pass
 
     @abc.abstractmethod
-    def coaddedLC(self, coaddTimes=None, format=None, *args, **kwargs):
+    def coaddedLC(self, coaddTimes=None, timeOffset=0., timeStep=1.0, *args, **kwargs):
         pass
 
     @abc.abstractmethod
@@ -117,7 +118,6 @@ class LightCurve(BaseLightCurve):
         >>> ex_data = sncosmo.load_example_data()
         >>> lc = LightCurve(ex_data.to_pandas()) 
         """
-
         aliases = self.columnAliases
         standardNamingDict = aliasDictionary(lcdf.columns, aliases)
         if len(standardNamingDict) > 0:
@@ -204,7 +204,173 @@ class LightCurve(BaseLightCurve):
                             minmjd=minmjd).rename(columns=dict(mjd='time'))
         return Table.from_pandas(lc)
 
-    def coaddedLC(self, coaddTimes=None, mjdBefore=None, minmjd=None):
+    @staticmethod
+    def sanitize_nan(lcs):
+        """
+        .. note:: These methods are meant to be applied to photometric tables
+        as well
+        """
+        
+        lcs = lcs.copy()
+        # Stop gap measure to deal with nans
+        avg_error  = lcs.fluxerr.mean(skipna=True)
+        lcs.fillna(dict(flux=0., fluxerr=avg_error), inplace=True)
+        return lcs
+    @staticmethod 
+    def discretize_time(lcs, timeOffset=0., timeStep=1.0):
+        """
+        .. note:: These methods are meant to be applied to photometric tables
+        as well
+        """
+        lcs['night'] = (lcs.mjd - timeOffset) // timeStep 
+        lcs.night =  lcs.night.astype(np.int)
+        return lcs
+    @staticmethod
+    def add_weightedColumns(lcs, avg_cols=('mjd', 'flux', 'fluxerr', 'zp'),
+                         additional_cols=None,
+                         copy=False):
+        avg_cols = list(tuple(avg_cols))
+        if additional_cols is not None:
+            avg_cols += list(additional_cols)
+        if copy:
+            lcs = lcs.copy()
+ 
+        if 'weights' not in lcs.columns:
+            if 'fluxerr' not in lcs.columns:
+                raise ValueError("Either fluxerr or weights must be a column in the dataFrame")
+            lcs['weights'] = 1.0 / lcs['fluxerr']**2
+        for col in avg_cols:
+            if col != 'fluxerr':
+                #lcs['weighted_' + col] = lcs[col] * lcs[col] * lcs['weights'] *lcs['weights']
+                #lcs['weights_squared'] = lcs['weights'] *lcs['weights']
+                #else:
+                lcs['weighted_' + col] = lcs[col] *lcs['weights']
+        return lcs
+
+    @staticmethod
+    def coaddpreprocessed(preProcessedlcs, include_snid=True,
+                          cols=('mjd', 'flux', 'fluxerr', 'zp', 'zpsys'),
+                          additionalAvgCols=None,
+                          additionalColsKept=None,
+                          additionalAggFuncs='first',
+                          keepAll=False,
+                          keepCounts=True):
+        """
+        Parameters
+        ----------
+        preProcessedlcs :
+        include_snid :
+        cols :
+        additionalAvgCols : list of strings
+        
+        .. note:: These methods are meant to be applied to photometric tables
+        as well
+        """
+        grouping = ['band', 'night']
+        if include_snid:
+            grouping = ['snid'] + grouping
+ 
+        default_avg_cols = ['mjd', 'flux', 'zp']
+        avg_cols = default_avg_cols
+        
+        if additionalAvgCols is not None:
+            avg_cols += additionalAvgCols
+            
+        default_add_cols = ['zpsys']
+        
+        lcs = preProcessedlcs
+        
+        
+        #lcs = _preprocess(lcs, cols=cols, timeStep=timeStep, timeOffset=timeOffset)
+        grouped = lcs.groupby(grouping)
+
+        aggdict = dict(('weighted_' + col, np.sum) for col in avg_cols)
+        aggdict['weights'] = np.sum
+        if keepCounts:
+            lcs['numExpinCoadd'] = lcs.mjd.copy()
+            aggdict['numExpinCoadd'] = 'count'
+            aggdict['zpsys'] = 'first'
+
+        # The columns we will finally keep
+        keptcols = grouping + ['zpsys']
+
+        # interpret type of additionalAggFuncs
+        # Assuming types are 
+        #   1. tuple of aggregate functions (sequence) 
+        #   2. string aggregate functions common to all eg. 'first'
+        #   3. method aggregate functions common to all eg. np.sum
+        if additionalColsKept is not None:
+            aggFuncScalar = True
+            if isinstance(additionalAggFuncs, basestring):
+                aggFuncScalar = True
+            elif isinstance(additionalAggFuncs, Sequence):
+                aggFuncScalar = False
+                if len(additionalAggFuncs) != len(additionalColsKept):
+                    raise ValueError('if sequence, length of aggfuncs and additionalColsKept should match')
+            else:
+                aggFuncScalar = True
+
+            if aggFuncScalar:
+                newaggs = zip_longest(additionalColsKept, (additionalAggFuncs,),
+                                      fillvalue=additionalAggFuncs)
+            else:
+                newaggs = zip(additionalColsKept, additionalAggFuncs)
+            for (col, val) in newaggs:
+                aggdict[col]=val
+
+            # Add these columns to the list keptcols
+            keptcols += list(additionalColsKept)
+
+        
+        x = grouped.agg(aggdict)
+    
+        weighted_cols = list(col for col in x.reset_index().columns
+                             if (col.startswith('weighted') and col != 'weighted_fluxerr') )
+        yy = x.reset_index()[weighted_cols].apply(lambda y: y/x.weights.values, axis=0)
+        yy['weighted_fluxerr_coadded'] = 1.0 / np.sqrt(x.reset_index()['weights'])#/x.reset_index()['weighted_fluxerr']**2)#.apply(lambda y: y/x.weights_squared.values)#/x.weights_squared.values)
+        yy.rename(columns=dict((col, col.split('_')[1]) for col in yy.columns), inplace=True)
+        if keepCounts:
+            keptcols += ['numExpinCoadd']
+        return x.reset_index()[keptcols].join(yy)
+
+    def coaddedLC(self,
+                  coaddTimes=None,
+                  minmjd=None,
+                  coaddedValues=['mjd', 'flux', 'fluxerr', 'zp'],
+		  additionalValues=['zpsys'],
+                  mjdBefore=None,
+                  sanitize=True):
+        """
+        """
+        # How should we coadd? group observation in steps of coaddTimes and
+        # offsets described by minmjd
+        if minmjd is None:
+            if mjdBefore is None:
+                minmjd = 0.
+            else:
+                minmjd = self.lightCurve.mjd.min() - mjdBefore
+
+        # Does the light curve have `snid`
+        include_snid = 'snid' in self.lightCurve.columns
+
+        # preprocess the light curve for coaddition
+        if not sanitize:
+            raise NotImplementedError('nan sanitization must be used for coadds\n')
+        lc = self.sanitize_nan(self.lightCurve)
+        lc = self.discretize_time(lc, timeOffset=minmjd, timeStep=coaddTimes)
+        lc = self.add_weightedColumns(lc,
+                                      avg_cols=coaddedValues,
+                                      additional_cols=None,
+                                      copy=True)
+        lc = self.coaddpreprocessed(lc,
+			            include_snid=include_snid,
+		                    cols=coaddedValues,
+			            additionalAvgCols=None,
+			            additionalColsKept=None,
+			            keepAll=False,
+                                    keepCounts=True)
+        return lc
+    def _coaddedLC(self, coaddTimes=None, mjdBefore=None, minmjd=None):
         """
         return a coadded light curve
         """
@@ -212,6 +378,7 @@ class LightCurve(BaseLightCurve):
             return self.lightCurve
 
         # otherwise perform coadd
+        # minmjd provides an offset for calculating discrete times
         if minmjd is None:
             if mjdBefore is None:
                 mjdBefore = 0.

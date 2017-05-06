@@ -240,10 +240,30 @@ uncertainty of the observation.</p>
 using the zero point system zpsys.</p>
 <p class="rubric">Attributes</p>
 <p class="rubric">Methods</p>
+<dl class="staticmethod">
+<dt id="sndata.LightCurve.coadd">
+<em class="property">static </em><code class="descname">coadd</code><span class="sig-paren">(</span><em>preProcessedlcs</em>, <em>include_snid=True</em>, <em>cols=('mjd'</em>, <em>'flux'</em>, <em>'fluxerr'</em>, <em>'zp'</em>, <em>'zpsys')</em>, <em>additionalAvgCols=None</em>, <em>additionalColsKept=None</em>, <em>keepAll=False</em>, <em>keepCounts=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/lightcurve.html#LightCurve.coadd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.LightCurve.coadd" title="Permalink to this definition">¶</a></dt>
+<dd><p>additionalAvgCols : list of strings</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">These methods are meant to be applied to photometric tables</p>
+</div>
+<p>as well</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="sndata.LightCurve.coaddedLC">
-<code class="descname">coaddedLC</code><span class="sig-paren">(</span><em>coaddTimes=None</em>, <em>mjdBefore=None</em>, <em>minmjd=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/lightcurve.html#LightCurve.coaddedLC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.LightCurve.coaddedLC" title="Permalink to this definition">¶</a></dt>
-<dd><p>return a coadded light curve</p>
+<code class="descname">coaddedLC</code><span class="sig-paren">(</span><em>coaddTimes=None, minmjd=None, coaddedValues=['mjd', 'flux', 'fluxerr', 'zp'], additionalValues=['zpsys'], mjdBefore=None, sanitize=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/lightcurve.html#LightCurve.coaddedLC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.LightCurve.coaddedLC" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="sndata.LightCurve.discretize_time">
+<em class="property">static </em><code class="descname">discretize_time</code><span class="sig-paren">(</span><em>lcs</em>, <em>timeOffset=0.0</em>, <em>timeStep=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/lightcurve.html#LightCurve.discretize_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.LightCurve.discretize_time" title="Permalink to this definition">¶</a></dt>
+<dd><div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">These methods are meant to be applied to photometric tables</p>
+</div>
+<p>as well</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -275,6 +295,16 @@ from the mandatory set of columns</p>
 <dt id="sndata.LightCurve.remap_filters">
 <em class="property">static </em><code class="descname">remap_filters</code><span class="sig-paren">(</span><em>name</em>, <em>nameDicts</em>, <em>ignore_case=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/lightcurve.html#LightCurve.remap_filters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.LightCurve.remap_filters" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="sndata.LightCurve.sanitize_nan">
+<em class="property">static </em><code class="descname">sanitize_nan</code><span class="sig-paren">(</span><em>lcs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sndata/lightcurve.html#LightCurve.sanitize_nan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sndata.LightCurve.sanitize_nan" title="Permalink to this definition">¶</a></dt>
+<dd><div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">These methods are meant to be applied to photometric tables</p>
+</div>
+<p>as well</p>
+</dd></dl>
 
 </dd></dl>
 
