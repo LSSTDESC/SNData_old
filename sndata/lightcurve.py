@@ -216,6 +216,7 @@ class LightCurve(BaseLightCurve):
         avg_error  = lcs.fluxerr.mean(skipna=True)
         lcs.fillna(dict(flux=0., fluxerr=avg_error), inplace=True)
         return lcs
+
     @staticmethod 
     def discretize_time(lcs, timeOffset=0., timeStep=1.0):
         """
@@ -225,6 +226,7 @@ class LightCurve(BaseLightCurve):
         lcs['night'] = (lcs.mjd - timeOffset) // timeStep 
         lcs.night =  lcs.night.astype(np.int)
         return lcs
+
     @staticmethod
     def add_weightedColumns(lcs, avg_cols=('mjd', 'flux', 'fluxerr', 'zp'),
                          additional_cols=None,
@@ -332,6 +334,116 @@ class LightCurve(BaseLightCurve):
         if keepCounts:
             keptcols += ['numExpinCoadd']
         return x.reset_index()[keptcols].join(yy)
+
+    @staticmethod
+    def summarize(lcdf,
+                  vals=('SNR', 'mjd', 'zp'),
+                  aggfuncs=(max, [max, min], 'count'),
+                  SNRmin=-10000.,
+                  paramsdf=None,
+                  grouping=('snid', 'band'),
+                  summary_prefix='',
+                  prefix_interpret='',
+                  useSNR=True):
+        """
+        summarize a light curve of set of light curves using the functions
+        `aggfunctions` to aggregate over the values in `vals` over groups
+        defined by grouping
+
+        Parameters
+        ----------
+        lcdf : `pd.DataFrame`
+            light curve(s) to aggregate over
+        vals : tuple of strings
+            column names to aggregate over
+        aggfunctions : tuple of functions
+            tuple of functions to use to aggregate the values in `vals`. Must
+            have the same length as vals.
+        paramsdf : `pd.DataFrame`, defaults to None
+            dataframe with one or more rows of truth parameters indexed by the
+            snid.
+
+        .. note ::
+        """
+
+
+        lcdf = lcdf.copy()
+
+        noSNID = False
+        if 'snid' not in lcdf.columns:
+            lcdf['snid'] = 0
+            # This hard coding is used later in this function
+            noSNID  = True
+            raise Warning('SNID not supplied, assuming that all records for a single SN') 
+
+        # necessary only if we use coadded columns, and recombine with previous
+        # columns in summary
+        fluxcol = prefix_interpret + 'flux'
+        fluxerrcol = prefix_interpret + 'fluxerr'
+
+        if 'SNR' not in lcdf.columns and useSNR:
+            # If useSNR is not False, we need to calculate this quantity
+            if not (fluxcol in lcdf.columns and fluxerrcol in lcdf.columns):
+                raise ValueError('The flux and flux error columns cannot be found to calculate SNR', fluxcol, fluxerrcol)
+            lcdf['SNR'] = lcdf[fluxcol] / lcdf[fluxerrcol]
+        lcdf = lcdf.query('SNR > @SNRmin')
+
+        # single band light curves
+        grouped = lcdf.groupby(list(grouping))
+        mapdict = dict(tuple(zip(vals, aggfuncs)))
+        summary = grouped.agg(mapdict)
+
+        # Check for variables to unstack
+        unstackvars = set(grouping) - set(('snid',))
+        if len(unstackvars) > 0 :
+            summary = summary.unstack()
+
+        # Build sensible column names
+        columns = list('_'.join(col).strip() for col in summary.columns.values)
+        summary.columns = columns
+        
+        namedicts = dict((col, 'NOBS' + col.split('count')[-1])
+                         for col in columns if 'count' in col)
+        summary.rename(columns=namedicts, inplace=True)
+        summary.rename(columns=dict((col, summary_prefix + col)
+                                    for col in summary.columns),
+                       inplace=True)
+
+
+        # Join with paramsdf
+        if paramsdf is None:
+            # well don't join
+            return summary
+
+        # if the lightcurve/photometry table did not have `snid` values
+        elif noSNID :
+            # assume single SN
+            if len(paramsdf) > 1 :
+                raise ValueError('Cannot crossmatch SN with paramsdf without SNID')
+
+            # Expected situation for light curves
+            # single SN in both lightcurve and `paramdf` tables,
+            # but `noSNID` => light curve did not have true SNID
+            elif 'snid' == paramsdf.index.name:
+                # paramsdf has a meaningful SNID, so take that value
+                summary.index = paramsdf.index.values
+                return summary.join(paramsdf)
+
+            # If paramsdf does not have the `snid` value
+            else :
+                # Then take the index value from the light curve (which is 0 as
+                # constructed above
+                paramsdf.index = 0
+                return summary.join(paramsdf)
+
+        # Expected situation for photometry tables
+        else :
+            # If lcdf has SN not in paramsdf 
+            if len(set(lcdf.snid.unique()) - set(paramsdf.index.values)) > 0:
+                raise ValueError('There are  SN in lcdf not in paramsdf')
+            return summary.join(paramsdf)
+
+
 
     def coaddedLC(self,
                   coaddTimes=None,
