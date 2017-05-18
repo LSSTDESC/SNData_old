@@ -95,7 +95,8 @@ class LightCurve(BaseLightCurve):
     using the zero point system zpsys.
     """
 
-    def __init__(self, lcdf, bandNameDict=None, ignore_case=True, propDict=None):
+    def __init__(self, lcdf, bandNameDict=None, ignore_case=True, propDict=None,
+                 cleanNans=True):
         """
         Instantiate Light Curve class
 
@@ -112,6 +113,10 @@ class LightCurve(BaseLightCurve):
             bandpasses
         propDict : Dictionary, optional, defaults to None
             a dictionary of properties associated with the light curve
+        cleanNans : Bool, defaults to True
+            if True, ensures that at the time of returning `snCosmoLC()` objects
+            which are used in fits, any row that has a `NAN` in it will be
+            dropped
         Example
         -------
         >>> from analyzeSN import LightCurve
@@ -132,6 +137,7 @@ class LightCurve(BaseLightCurve):
         self._lightCurve  = lcdf
         self.ignore_case = ignore_case
         self._propDict = propDict
+        self.cleanNans = cleanNans
 
     @property
     def props(self):
@@ -149,7 +155,10 @@ class LightCurve(BaseLightCurve):
                 return x[:-3].lower()
         banddict = dict((key.lower(), filtername(key) + key[-1])
                         for key in lc.Filter.unique())
-        return cls(lc, bandNameDict=banddict, ignore_case=True, propDict=_lc.meta)
+        return cls(lc,
+                   bandNameDict=banddict,
+                   ignore_case=True,
+                   propDict=_lc.meta)
 
 
     def missingColumns(self, lcdf):
@@ -202,6 +211,8 @@ class LightCurve(BaseLightCurve):
     def snCosmoLC(self, coaddTimes=None, mjdBefore=0., minmjd=None):
         lc = self.coaddedLC(coaddTimes=coaddTimes, mjdBefore=mjdBefore,
                             minmjd=minmjd).rename(columns=dict(mjd='time'))
+        if self.cleanNans:
+            lc.dropna(inplace=True)
         return Table.from_pandas(lc)
 
     @staticmethod
@@ -469,6 +480,10 @@ class LightCurve(BaseLightCurve):
         if not sanitize:
             raise NotImplementedError('nan sanitization must be used for coadds\n')
         lc = self.sanitize_nan(self.lightCurve)
+        if coaddTimes is None:
+            if self.cleanNans:
+                lc = self.lightCurve.dropna(inplace=False)
+            return lc
         lc = self.discretize_time(lc, timeOffset=minmjd, timeStep=coaddTimes)
         lc = self.add_weightedColumns(lc,
                                       avg_cols=coaddedValues,
