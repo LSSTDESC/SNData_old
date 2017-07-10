@@ -54,6 +54,13 @@ class BaseLightCurve(with_metaclass(abc.ABCMeta, object)):
         notFound = self.mandatoryColumns - set(lcdf.columns)
         return notFound
 
+    @staticmethod
+    def requiredColumns():
+        """
+        """
+        reqd = set(['mjd', 'band', 'flux', 'fluxerr', 'zp', 'zpsys'])
+        return reqd
+
     @property
     def mandatoryColumns(self):
         """
@@ -64,8 +71,7 @@ class BaseLightCurve(with_metaclass(abc.ABCMeta, object)):
         band : string
         flux : model flux
         """
-        reqd = set(['mjd', 'band', 'flux', 'fluxerr', 'zp', 'zpsys'])
-        return reqd
+        return self.requiredColumns()
 
     @property
     def columnAliases(self):
