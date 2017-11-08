@@ -59,7 +59,7 @@ def aliasDictionary(sequence, aliases):
     # invert aliases dictionary to get
     inverse_dict = dict()
     _ = [inverse_dict.update({alias:aliastuple[0]})
-         for aliastuple in aliases.iteritems() for alias in aliastuple[1]]
+         for aliastuple in aliases.items() for alias in aliastuple[1]]
 
     # Account for capitalization issues
     testDict = dict((s.lower(), s) for s in sequence)

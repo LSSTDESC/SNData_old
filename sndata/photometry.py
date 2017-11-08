@@ -307,7 +307,7 @@ class Photometry(BasePhotometry):
             grouped = dataframe.groupby(list(groupTuple))
         callable_strings = list(s.__name__ for s in callableTuple)
         xx = grouped.agg(dict(zip(PropTuple, callableTuple)))
-	xx.columns = ('_'.join(name) for name in zip(callable_strings, xx.columns))
-	xx = xx.reset_index().pivot_table(index='snid', columns='band')
-	xx.columns = ['_'.join(col).strip() for col in xx.columns.values]
-	return xx 
+        xx.columns = ('_'.join(name) for name in zip(callable_strings, xx.columns))
+        xx = xx.reset_index().pivot_table(index='snid', columns='band')
+        xx.columns = ['_'.join(col).strip() for col in xx.columns.values]
+        return xx 

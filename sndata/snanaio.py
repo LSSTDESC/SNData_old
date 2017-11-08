@@ -5,6 +5,7 @@ import numpy as np
 import os
 from .lightcurve import LightCurve
 from astropy.table import Table, Column
+from six import string_types
 
 
 __all__ = ['SNANASims']
@@ -122,7 +123,7 @@ class SNANASims(object):
 	coerce_inds2int :
 	"""
         _head = Table.read(headFile)
-        if _head['SNID'].dtype.type is np.string_:
+        if isinstance(_head['SNID'][0], string_types):
             data = _head['SNID'].data
             name = _head['SNID'].name
             dtype = _head['SNID'].dtype
