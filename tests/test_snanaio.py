@@ -1,10 +1,11 @@
 from __future__ import absolute_import, print_function, division
 
-import analyzeSN as ans
+import sndata as ans
 import os
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
-registeredMegaCamBands = tuple('mega_' + band for band in 'ugriz')
+MegacamBandNames = list(x.encode() for x in 'ugriz')
+registeredMegaCamBands = tuple('megacam' + band.decode() for band in MegacamBandNames)
 def test_load():
     headFile = os.path.join(ans.__path__[0], 'example_data',
                             'snana_fits_HEAD.FITS')
@@ -12,12 +13,12 @@ def test_load():
                             'snana_fits_PHOT.FITS')
     sne = ans.SNANASims(headFile=headFile, photFile=photFile,
                         coerce_inds2int=False,
-                        SNANABandNames='ugriz',
+                        SNANABandNames=MegacamBandNames,
                         registeredBandNames=registeredMegaCamBands)
     print(sne.bandNames)
-    assert sne.bandNames == 'ugriz'
-    assert sne.newbandNames == ('mega_u', 'mega_g', 'mega_r', 'mega_i',
-                                'mega_z')
+    assert sne.bandNames == MegacamBandNames
+    assert sne.newbandNames == ('megacamu', 'megacamg', 'megacamr', 'megacami',
+                                'megacamz')
     assert len(sne.bandNameDict.keys()) == 5 
     assert len(sne.headData) == 2
     assert len(sne.get_SNANA_photometry(snid='03d1aw').lightCurve) > 0
