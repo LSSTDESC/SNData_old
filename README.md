@@ -22,6 +22,23 @@ In terms of simulation formats that we would like to be able to read:
 - Light Curves for basic data
 - Light Curves for coadded data
 - SNCosmo format light curves (ie. `astropy.table.Table`) available for fits 
+
+In order to accept light curves from some data source, we would need the following minimal set of columns. Additional information is welcome, but these are the minimal number of columns:
+
+_Light Curves_ :
+
+In order to be able to connect to DM processed light curves, the light curves could be read in the format of an astropy Table with a minimal set of columns, and a metadata dictionary. 
+
+The columns are described below, and also the keys to the dicttionary: 
+band, mjd, flux, flux_err, zp, zpsys 
+
+If calibrated zp can be et to zero. 
+In case of LSST, a visit ID should be provided additionally (or in place of) band.
+
+The astropy table should come with the following minimal metadata
+snid, ra, dec, processing_tags 
+
+ 
 #### Write
  We will also use these formats to write datasets for simulations.
 
