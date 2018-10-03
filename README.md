@@ -1,6 +1,8 @@
 # SNData
 A repository with data structures useful for SN analysis and simulations.
 
+## Installation
+See the [install file](./install/installation.md)
 ## Description and Rationale
 The basic input to most (if not all) analysis codes in supernovae are light curves and metadata for individual supernovae. These can be collected from real data or simulations, and each dataset/simulation might have its own format. The objectives here are
 - to be able to interact with some inputs and obtain light curves and metadata as appropriate for our analysis codes
@@ -44,8 +46,6 @@ snid, ra, dec, processing_tags
 
 ## Requirements
 - throughputs : Either install and setup the sims stack  
-## Installation
-
 ## Contributing :
 To contribute to the code:
 1. please create a github issue describing the changes to make 
