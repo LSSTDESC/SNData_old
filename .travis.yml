@@ -21,7 +21,7 @@ cache:
   timeout: 1600
 before_script:
     - bash ./setup/add_throughputs.sh
-    - cd throughputs
+    - cd ../throughputs
     - export THROUGHPUTS_DIR=`pwd`
     - echo "THROUGHPUTS set to " $THROUGHPUTS_DIR
 script:
