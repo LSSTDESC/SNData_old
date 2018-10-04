@@ -17,7 +17,7 @@ __version__ =  versionRegExp.findall(s)[0]
 
 setup(# package information
     name=packageName,
-    install_requires=['pandas', 'numpy', 'fitsio'],
+    install_requires=['pandas', 'numpy', 'fitsio', 'future'],
     version=__version__,
     description='Data structures and file formats for SN light curves',
     long_description=''' ''',
