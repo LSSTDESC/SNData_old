@@ -19,5 +19,10 @@ cache:
   directories:
   - $HOME/miniconda.tarball
   timeout: 1600
+before_script:
+    - bash ./setup/add_throughputs.sh
+    - cd throughputs
+    - export THROUGHPUTS_DIR=`pwd`
+    - echo "THROUGHPUTS set to " $THROUGHPUTS_DIR
 script:
     - py.test tests/ 
