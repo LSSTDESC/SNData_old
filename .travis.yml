@@ -21,8 +21,9 @@ cache:
   timeout: 1600
 before_script:
     - bash ./setup/add_throughputs.sh
-    - cd ../throughputs
+    - pushd ../throughputs
     - export THROUGHPUTS_DIR=`pwd`
     - echo "THROUGHPUTS set to " $THROUGHPUTS_DIR
+    - popd
 script:
     - py.test tests/ 
