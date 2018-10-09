@@ -22,27 +22,28 @@ class SNANASims(object):
                  SNANABandNames=lsst_bandNames,
                  registeredBandNames=lsst_bandpassNames):
         """
-	Parameters
-	---------
-	headFile : string, mandatory
-	    absolute path to head file of simulation
-	photFile : string, mandatory
-	    absolute path to phot file of simulation
-	coerce_inds2int : Bool, optional, defaults to True
-	    if true, converts SNID from string to int
+        Parameters
+        ---------
+        headFile : string, mandatory
+            absolute path to head file of simulation
+        photFile : string, mandatory
+            absolute path to phot file of simulation
+        coerce_inds2int : Bool, optional, defaults to True
+            if true, converts SNID from string to int
         SNANABandNames : iterable of strings/characters, optional, defaults to LSST
             characters used to denote the bandpass in the SNANA simulations
         registeredBandNames : iterable of strings, optional, defaults to LSST
             names of the bands registered in SNCosmo
-	"""
+        """
         self.headFile = headFile
         self.photFile = photFile
         self.headData = self.get_headData(self.headFile,
-					  coerce_inds2int=coerce_inds2int)
+                                          coerce_inds2int=coerce_inds2int)
         self.phot = fitsio.FITS(photFile)
         self.bandNames = SNANABandNames
         self.newbandNames = registeredBandNames
         self.bandNameDict = dict(zip(self.bandNames, self.newbandNames)) 
+        self.coerce_inds2int = coerce_inds2int
 
     @classmethod
     def fromSNANAfileroot(cls, snanafileroot, location='./',
@@ -114,14 +115,14 @@ class SNANASims(object):
     @staticmethod 
     def get_headData(headFile, coerce_inds2int=False):
         """
-	read the headData of a SNANA simulation and return a dataframe
-	representing the simulation
+        read the headData of a SNANA simulation and return a dataframe
+        representing the simulation
         
         Parameters
-	----------
-	headFile :
-	coerce_inds2int :
-	"""
+        ----------
+        headFile :
+        coerce_inds2int :
+        """
         _head = Table.read(headFile)
         if isinstance(_head['SNID'][0], string_types):
             data = _head['SNID'].data
@@ -139,14 +140,14 @@ class SNANASims(object):
         
     def get_photrows(self, row=None, snid=None):
         """
-	return rows of the photometry table corresponding to a SN as listed
-	in the head table.
+        return rows of the photometry table corresponding to a SN as listed
+        in the head table.
 
-	Parameters
-	----------
-	row :
-	snid :
-	"""
+        Parameters
+        ----------
+        row :
+        snid :
+        """
         if row is not None:
             ptrs = self.headData.iloc[row][['PTROBS_MIN', 'PTROBS_MAX']]
         elif snid is not None:
@@ -160,7 +161,7 @@ class SNANASims(object):
 
     def get_SNANA_photometry(self, snid=None, ptrs=None):
         """
-	return the photometry table corresponding to a SN with snid (from the
+        return the photometry table corresponding to a SN with snid (from the
        	head table) or the photometry table within the range of row numbers
 	indicated by ptrs
 
@@ -168,11 +169,14 @@ class SNANASims(object):
         ----------
         snid : 
         ptrs :
-	"""
+        """
         if ptrs is not None:
             assert np.shape(ptrs) == (2,)
         elif snid is not None:
-            ptrs = self.get_photrows(snid=snid.strip().lower())
+            if self.coerce_inds2int:
+                ptrs = self.get_photrows(snid=snid)
+            else:
+                ptrs = self.get_photrows(snid=snid.strip().lower())
         else:
             raise ValueError('Both {0} and {1} cannot be None'
                              'simulataneously'.format('snid', 'row'))

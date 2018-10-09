@@ -207,6 +207,7 @@ class LightCurve(BaseLightCurve):
         _lc = self._lightCurve.copy()
 
         # return the light curve
+        _lc.band = _lc.band.apply(lambda x: x.decode())
         _lc.band = _lc.band.apply(lambda x: x.strip())
         if self.bandNameDict is not None:
             _lc.band = _lc.band.apply(lambda x:
