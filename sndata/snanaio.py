@@ -159,7 +159,7 @@ class SNANASims(object):
         ptrs[0] -= 1
         return ptrs
 
-    def get_SNANA_photometry(self, snid=None, ptrs=None):
+    def get_SNANA_photometry(self, snid, ptrs=None, keepSnid=True):
         """
         return the photometry table corresponding to a SN with snid (from the
        	head table) or the photometry table within the range of row numbers
@@ -167,8 +167,11 @@ class SNANASims(object):
 
         Parameters
         ----------
-        snid : 
+        snid : int, str
+            index of the SN whose photometry is used
         ptrs :
+        keepSnid : Bool, defaults to True
+            if true, the snid is kept as a column
         """
         if ptrs is not None:
             assert np.shape(ptrs) == (2,)
@@ -182,7 +185,10 @@ class SNANASims(object):
                              'simulataneously'.format('snid', 'row'))
         lcData = self.phot[1][ptrs[0]: ptrs[1]].byteswap().newbyteorder()
         lcdf = pd.DataFrame(lcData)
+        lcdf['snid'] = snid
         lcdf['zpsys'] = 'ab'
         lcdf['zp'] = 27.5
+        if keepSnid:
+            lcdf['snid'] = snid
  
         return LightCurve(lcdf, bandNameDict=self.bandNameDict, ignore_case=True)
