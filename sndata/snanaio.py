@@ -185,7 +185,7 @@ class SNANASims(object):
                              'simulataneously'.format('snid', 'row'))
         lcData = self.phot[1][ptrs[0]: ptrs[1]].byteswap().newbyteorder()
         lcdf = pd.DataFrame(lcData)
-        lcdf['snid'] = snid
+        lcdf['SNID'] = snid
         lcdf['zpsys'] = 'ab'
         lcdf['zp'] = 27.5
         if keepSnid:
