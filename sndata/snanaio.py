@@ -16,7 +16,9 @@ lsst_bandpassNames = tuple('lsst' + band
 class SNANASims(object):
     """
     Class to represent SNANA simulations of a particular class of objects, ie.
-    Ia or Non_Ia
+    Ia or Non_Ia. The basic input from an SNANA simulation is considered to be
+    a `headFile` and a `photFile`. If the `headFile` is empty, the instantiated
+    class is considered to be `None`.
     """
     def __init__(self, headFile, photFile, coerce_inds2int=True,
                  SNANABandNames=lsst_bandNames,
@@ -39,11 +41,14 @@ class SNANASims(object):
         self.photFile = photFile
         self.headData = self.get_headData(self.headFile,
                                           coerce_inds2int=coerce_inds2int)
-        self.phot = fitsio.FITS(photFile)
         self.bandNames = SNANABandNames
         self.newbandNames = registeredBandNames
         self.bandNameDict = dict(zip(self.bandNames, self.newbandNames)) 
         self.coerce_inds2int = coerce_inds2int
+        if self.headData is None:
+            self.phot = None
+            return None
+        self.phot = fitsio.FITS(photFile)
 
     @classmethod
     def fromSNANAfileroot(cls, snanafileroot, location='./',
@@ -73,6 +78,10 @@ class SNANASims(object):
 
         headfile = cls.snanadatafile(snanafileroot, filetype='head',
                                      location=location, gzipped=gzipped)
+        headData = cls.get_headData(headfile,
+                                    coerce_inds2int=coerce_inds2int)
+        if headData is None:
+            return None
         photfile = cls.snanadatafile(snanafileroot, filetype='phot',
                                      location=location, gzipped=gzipped)
         return cls(headFile=headfile, photFile=photfile,
@@ -123,7 +132,7 @@ class SNANASims(object):
     def get_headData(headFile, coerce_inds2int=False):
         """
         read the headData of a SNANA simulation and return a dataframe
-        representing the simulation
+        representing the simulation. If this is empty return None.
         
         Parameters
         ----------
@@ -131,6 +140,8 @@ class SNANASims(object):
         coerce_inds2int :
         """
         _head = Table.read(headFile)
+        if len(_head) == 0:
+            return None
         if isinstance(_head['SNID'][0], string_types):
             data = _head['SNID'].data
             name = _head['SNID'].name
