@@ -49,7 +49,8 @@ class SNANASims(object):
     def fromSNANAfileroot(cls, snanafileroot, location='./',
                           coerce_inds2int=False, 
                           SNANABandNames=lsst_bandNames,
-                          registeredBandNames=lsst_bandpassNames):
+                          registeredBandNames=lsst_bandpassNames,
+                          gzipped=True):
         """
         Class constructor from a root file and a location
 
@@ -66,18 +67,20 @@ class SNANASims(object):
             are loaded
         n : Integer, defaults to None
             if not None, only the first n SN light curves are loaded
+        gzipped : Bool, defaults to True
+            if gzipped, searches for gzipped filenames
         """
 
         headfile = cls.snanadatafile(snanafileroot, filetype='head',
-                                     location=location)
+                                     location=location, gzipped=gzipped)
         photfile = cls.snanadatafile(snanafileroot, filetype='phot',
-                                     location=location)
+                                     location=location, gzipped=gzipped)
         return cls(headFile=headfile, photFile=photfile,
                    coerce_inds2int=coerce_inds2int, SNANABandNames=SNANABandNames,
                    registeredBandNames=registeredBandNames)
     
     @staticmethod
-    def snanadatafile(snanafileroot, filetype='head', location='./'):
+    def snanadatafile(snanafileroot, filetype='head', location='./', gzipped=True):
         '''
         obtain the name of the head or phot file of an SNANA simulation
         and dataset
@@ -93,6 +96,8 @@ class SNANASims(object):
         location : string, optional defaults to current working directory './' 
             relative or absolute path to the directory in which the file is
             located
+        gzipped : Bool, defaults to True
+            if True, looks for zipped FITS files.
 
         Returns
         -------
@@ -109,6 +114,8 @@ class SNANASims(object):
         suffix = '_HEAD.FITS'
         if filetype.lower() == 'phot':
             suffix = '_PHOT.FITS'
+        if gzipped:
+            suffix += '.gz'
         fname = snanafileroot + suffix
         return os.path.join(location, fname)
 
@@ -159,7 +166,7 @@ class SNANASims(object):
         ptrs[0] -= 1
         return ptrs
 
-    def get_SNANA_photometry(self, snid, ptrs=None, keepSnid=True):
+    def get_SNANA_photometry(self, snid, ptrs=None, keepSnid=True): 
         """
         return the photometry table corresponding to a SN with snid (from the
        	head table) or the photometry table within the range of row numbers
@@ -185,10 +192,8 @@ class SNANASims(object):
                              'simulataneously'.format('snid', 'row'))
         lcData = self.phot[1][ptrs[0]: ptrs[1]].byteswap().newbyteorder()
         lcdf = pd.DataFrame(lcData)
-        lcdf['SNID'] = snid
         lcdf['zpsys'] = 'ab'
         lcdf['zp'] = 27.5
         if keepSnid:
-            lcdf['snid'] = snid
- 
+            lcdf['SNID'] = snid
         return LightCurve(lcdf, bandNameDict=self.bandNameDict, ignore_case=True)
